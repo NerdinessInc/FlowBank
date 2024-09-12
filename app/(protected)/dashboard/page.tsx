@@ -1,6 +1,16 @@
-import { Banknote, CreditCard, ActivitySquare } from 'lucide-react';
+'use client';
+
+import Autoplay from 'embla-carousel-autoplay';
+import Image from 'next/image';
+
+import { ActivitySquare, Banknote, CreditCard } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+} from '@/components/ui/carousel';
 import {
 	Table,
 	TableBody,
@@ -11,6 +21,12 @@ import {
 } from '@/components/ui/table';
 
 export default function Dashboard() {
+	const advertImages: string[] = [
+		'https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+		'https://images.unsplash.com/photo-1725714835081-118a2b0456b2?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+		'https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+	];
+
 	return (
 		<main className='h-full w-full flex flex-col gap-6'>
 			<h2 className='text-2xl font-bold'>Welcome, Segun Olagunju</h2>
@@ -83,6 +99,33 @@ export default function Dashboard() {
 					</CardContent>
 				</Card>
 			</div>
+
+			<Carousel
+				className='mt-4'
+				opts={{
+					loop: true,
+				}}
+				plugins={[
+					Autoplay({
+						delay: 5000,
+					}),
+				]}
+			>
+				<CarouselContent>
+					{advertImages.map((image, index) => (
+						<CarouselItem className='relative w-full h-[300px]' key={index}>
+							<div className='w-full h-full'>
+								<Image
+									src={image}
+									fill
+									alt={`image ${index + 1}`}
+									className='object-cover'
+								/>
+							</div>
+						</CarouselItem>
+					))}
+				</CarouselContent>
+			</Carousel>
 		</main>
 	);
 }

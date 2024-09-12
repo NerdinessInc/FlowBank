@@ -19,7 +19,7 @@ export default function DashboardLayout({
 					<SidebarMobile />
 				</div>
 
-				<main className='flex flex-1 flex-col gap-4 mb-6 p-4 md:gap-6 md:p-6'>
+				<main className='flex flex-1 flex-col gap-4 mb-6 p-4 md:gap-6 md:p-6 overflow-auto'>
 					{children}
 				</main>
 			</div>
