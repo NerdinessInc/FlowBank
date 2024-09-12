@@ -1,3 +1,7 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,11 +13,13 @@ import {
 } from '@/components/ui/popover';
 
 export const description =
-	"A simple login form with email and password. The submit button says 'Sign in'.";
+	"A simple login form with email and password. The submit button says 'Login'.";
 
 const LoginForm = () => {
+	const router = useRouter();
+
 	return (
-		<main className='w-full h-screen flex items-center justify-center'>
+		<main className='w-full h-full flex items-center justify-center bg-background'>
 			<Card className='w-full max-w-sm py-6'>
 				<CardContent className='grid gap-4'>
 					<div className='grid gap-2'>
@@ -52,7 +58,12 @@ const LoginForm = () => {
 				</CardContent>
 
 				<CardFooter>
-					<Button className='w-full bg-fuchsia-600 font-semibold'>Login</Button>
+					<Button
+						className='w-full font-semibold'
+						onClick={() => router.push('/dashboard')}
+					>
+						Login
+					</Button>
 				</CardFooter>
 			</Card>
 		</main>
