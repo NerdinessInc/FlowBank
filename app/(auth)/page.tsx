@@ -1,70 +1,198 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
+// hooks
+import { useToast } from '@/hooks/use-toast';
+
+// import { useRouter } from 'next/navigation';
+
+// icons
+import { HelpCircle } from 'lucide-react';
+
+// form
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+// query
+import { useMutation } from '@tanstack/react-query';
+
+// components
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover';
 
+// services
+import { authUser, getAccessCode } from '@/services/api';
+
 export const description =
 	"A simple login form with email and password. The submit button says 'Login'.";
 
 const LoginForm = () => {
-	const router = useRouter();
+	// const router = useRouter();
+	const { toast } = useToast();
+
+	const [accessCodeChars, setAccessCodeChars] = useState<any>({});
+
+	const loginSchema = z.object({
+		accessCode: z.string().min(3, 'Please enter your access code'),
+		password: z.string().min(1, 'Please enter your password'),
+		username: z.string().min(1, 'Please enter your username'),
+	});
+
+	const defaultValues = {
+		accessCode: '',
+		password: '',
+		username: '',
+	};
+
+	const methods = useForm({
+		defaultValues,
+		resolver: zodResolver(loginSchema),
+	});
+
+	useEffect(() => {
+		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
+	}, []);
+
+	const { handleSubmit } = methods;
+
+	const authUserMutation = useMutation({
+		mutationFn: authUser,
+		onSuccess: (res: any) => {
+			console.log(res);
+
+			if (!res.success) {
+				toast({
+					title: res.errorMessage,
+					variant: 'destructive',
+				});
+			}
+		},
+	});
+
+	const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+		await authUserMutation.mutateAsync({
+			...data,
+			access: accessCodeChars,
+		});
+	};
 
 	return (
 		<main className='w-full h-full flex items-center justify-center bg-background'>
 			<Card className='w-full max-w-sm py-6'>
 				<CardContent className='grid gap-4'>
-					<div className='grid gap-2'>
-						<Label htmlFor='username'>Username</Label>
-						<Input
-							id='username'
-							type='text'
-							placeholder='Enter your username'
-							required
-						/>
-					</div>
+					<Form {...methods}>
+						<form onSubmit={handleSubmit(onSubmit)} className='space-y-3'>
+							<FormField
+								control={methods.control}
+								name='username'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Username</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your username'
+												required
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 
-					<div className='grid gap-2'>
-						<Label htmlFor='password'>Password</Label>
-						<Input id='password' type='password' required />
-					</div>
+							<FormField
+								control={methods.control}
+								name='password'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Password</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your password'
+												type='password'
+												required
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 
-					<div className='grid gap-2'>
-						<Label htmlFor='access'>Access Code</Label>
+							<FormField
+								control={methods.control}
+								name='accessCode'
+								render={({ field }) => (
+									<FormItem>
+										<div className='flex items-center space-x-2'>
+											<div className='flex-grow'>
+												<FormLabel>Access Code</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														placeholder='Enter your access code'
+														required
+													/>
+												</FormControl>
+											</div>
 
-						<Popover>
-							<PopoverTrigger asChild>
-								<Input id='access' type='text' required />
-							</PopoverTrigger>
+											<Popover>
+												<PopoverTrigger asChild>
+													<button type='button' className='mt-6'>
+														<HelpCircle className='h-5 w-5 text-gray-500' />
+													</button>
+												</PopoverTrigger>
 
-							<PopoverContent side='right' className='w-[200px] text-sm'>
-								<p>
-									Enter the <span className='font-bold'>Third</span>,
-									<span className='font-bold'> Second</span>, and
-									<span className='font-bold'> Fourth</span> Characters of your
-									access code.
-								</p>
-							</PopoverContent>
-						</Popover>
-					</div>
+												<PopoverContent
+													side='right'
+													className='w-[200px] text-sm'
+												>
+													<p>
+														Enter the{' '}
+														<span className='font-bold'>
+															{accessCodeChars.Char1}
+														</span>
+														,
+														<span className='font-bold'>
+															{' '}
+															{accessCodeChars.Char2}
+														</span>
+														, and
+														<span className='font-bold'>
+															{' '}
+															{accessCodeChars.Char3}
+														</span>{' '}
+														Characters of your access code.
+													</p>
+												</PopoverContent>
+											</Popover>
+										</div>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<Button className='w-full font-semibold mt-3' type='submit'>
+								{authUserMutation.isPending ? '...' : 'Login'}
+							</Button>
+						</form>
+					</Form>
 				</CardContent>
-
-				<CardFooter>
-					<Button
-						className='w-full font-semibold'
-						onClick={() => router.push('/dashboard')}
-					>
-						Login
-					</Button>
-				</CardFooter>
 			</Card>
 		</main>
 	);

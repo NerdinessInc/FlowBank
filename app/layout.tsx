@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/toaster';
+
+import Providers from '@/app/providers';
 
 import './globals.css';
 
@@ -31,13 +33,11 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<ThemeProvider
-					attribute='class'
-					defaultTheme='light'
-					disableTransitionOnChange
-				>
+				<Providers>
 					{children}
-				</ThemeProvider>
+
+					<Toaster />
+				</Providers>
 			</body>
 		</html>
 	);
