@@ -9,7 +9,7 @@ const instance = axios.create({
 	},
 });
 
-// Request Interceptor (unchanged)
+// Request Interceptor
 instance.interceptors.request.use(
 	(config) => {
 		if (config.headers['Content-Type'] === 'application/soap+xml') {
@@ -85,11 +85,11 @@ instance.interceptors.response.use(
 	}
 );
 
-// Helper function to create SOAP envelope (unchanged)
+// Helper function to create SOAP envelope
 const createSoapEnvelope = (body: string) =>
 	`<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body>${body}</soap:Body></soap:Envelope>`;
 
-// Function to make SOAP requests (unchanged)
+// Function to make SOAP requests
 const soapRequest = async (endpoint: string, body: string) => {
 	const response = await instance.post(endpoint, createSoapEnvelope(body), {
 		headers: {
