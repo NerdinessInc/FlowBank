@@ -1,5 +1,9 @@
 import { soapRequest } from '@/utils';
 import { getCookie } from '@/utils/cookies';
+import WebClasses from '@/utils/webClasses';
+
+const webClasses = new WebClasses();
+
 
 export const getAccessCode = async () => {
 	const body = `<ReturnGetThreeCodes xmlns="http://con.Ibplc.org/"><UIx>xxx</UIx></ReturnGetThreeCodes>`;
@@ -20,18 +24,22 @@ export const getAccessCode = async () => {
 		};
 	}
 };
+// <sid>${values.sessionID}</sid>
+//<sid>${getCookie('sessionID') || ' 104.28.219.97'}</sid>
 
 export const authUser = async (values: any) => {
+	
 	const authUserBody = `
 	<ReturnAuthuser xmlns="http://con.Ibplc.org/">
-		<acCode>${values.accessCode}</acCode>
-		<pwd>${values.password}</pwd>
-		<uname>${values.username}</uname>
-		<sid>${getCookie('sessionID') || '104.28.219.97'}</sid>
+		<acCode>${webClasses.encryptText(values.accessCode)}</acCode>
+		<pwd>${webClasses.encryptText(values.password)}</pwd>
+		<uname>${webClasses.encryptText(values.username)}</uname>
+		<sid>'test 104.28.219.97'}</sid>
+		
 		<mThree>
-			<Char1>${values.access.Char1}</Char1>
-			<Char2>${values.access.Char2}</Char2>
-			<Char3>${values.access.Char3}</Char3>
+			<Char1>${webClasses.encryptText(values.access.Char1)}</Char1>
+			<Char2>${webClasses.encryptText(values.access.Char2)}</Char2>
+			<Char3>${webClasses.encryptText(values.access.Char3)}</Char3>
 			<bool>${values.access.bool}</bool>
 			<retMsg>${values.access.retMsg}</retMsg>
 			<cAC>${values.access.cAC || ''}</cAC>
@@ -40,6 +48,7 @@ export const authUser = async (values: any) => {
 		.trim()
 		.replace(/\s+/g, ' ');
 
+	console.log(authUserBody)
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		authUserBody
@@ -47,6 +56,7 @@ export const authUser = async (values: any) => {
 
 	try {
 		const result = data['ReturnAuthuserResult'];
+		console.log(result)
 
 		const enumRec = result['enumRec'];
 		const oraresp = result['oraresp'];

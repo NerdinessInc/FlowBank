@@ -47,6 +47,7 @@ const LoginForm = () => {
 	const { toast } = useToast();
 
 	const [accessCodeChars, setAccessCodeChars] = useState<any>({});
+	const [sessionID, setSessionID] = useState(null);
 
 	const loginSchema = z.object({
 		accessCode: z.string().min(3, 'Please enter your access code'),
@@ -64,10 +65,24 @@ const LoginForm = () => {
 		defaultValues,
 		resolver: zodResolver(loginSchema),
 	});
-
+	
 	useEffect(() => {
 		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
 	}, []);
+
+
+	useEffect(() => {
+    // Fetch the session ID from the API route
+    async function fetchSessionID() {
+      const res = await fetch('/utils/getSessionId');
+      const data = await res.json();
+      setSessionID(data.sessionID);
+    }
+
+    fetchSessionID();
+	}, []);
+	
+	console.log(accessCodeChars);
 
 	const { handleSubmit } = methods;
 
@@ -89,6 +104,7 @@ const LoginForm = () => {
 		await authUserMutation.mutateAsync({
 			...data,
 			access: accessCodeChars,
+			sid: sessionID,
 		});
 	};
 
