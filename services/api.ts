@@ -1,9 +1,8 @@
 import { soapRequest } from '@/utils';
-import { getCookie } from '@/utils/cookies';
+// import { getCookie } from '@/utils/cookies';
 import WebClasses from '@/utils/webClasses';
 
 const webClasses = new WebClasses();
-
 
 export const getAccessCode = async () => {
 	const body = `<ReturnGetThreeCodes xmlns="http://con.Ibplc.org/"><UIx>xxx</UIx></ReturnGetThreeCodes>`;
@@ -24,17 +23,14 @@ export const getAccessCode = async () => {
 		};
 	}
 };
-// <sid>${values.sessionID}</sid>
-//<sid>${getCookie('sessionID') || ' 104.28.219.97'}</sid>
 
 export const authUser = async (values: any) => {
-	
 	const authUserBody = `
 	<ReturnAuthuser xmlns="http://con.Ibplc.org/">
 		<acCode>${webClasses.encryptText(values.accessCode)}</acCode>
 		<pwd>${webClasses.encryptText(values.password)}</pwd>
 		<uname>${webClasses.encryptText(values.username)}</uname>
-		<sid>'test 104.28.219.97'}</sid>
+		<sid>${values.sid}</sid>
 		
 		<mThree>
 			<Char1>${webClasses.encryptText(values.access.Char1)}</Char1>
@@ -48,7 +44,6 @@ export const authUser = async (values: any) => {
 		.trim()
 		.replace(/\s+/g, ' ');
 
-	console.log(authUserBody)
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		authUserBody
@@ -56,7 +51,6 @@ export const authUser = async (values: any) => {
 
 	try {
 		const result = data['ReturnAuthuserResult'];
-		console.log(result)
 
 		const enumRec = result['enumRec'];
 		const oraresp = result['oraresp'];
@@ -70,6 +64,7 @@ export const authUser = async (values: any) => {
 			userNameWrong: enumRec['UserNameWrong'],
 			userAccountLocked: enumRec['UserAccountLocked'],
 			numberOfAccounts: parseInt(data['NumberOfAccounts'], 10),
+			...result,
 		};
 	} catch (error) {
 		return {

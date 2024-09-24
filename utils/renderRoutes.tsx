@@ -46,6 +46,7 @@ export const renderRoutes = ({
 					key={route.pathname}
 					open={isOpen}
 					onOpenChange={() => toggleItem(route.pathname)}
+					className='space-y-1.5'
 				>
 					<CollapsibleTrigger asChild>
 						<Button

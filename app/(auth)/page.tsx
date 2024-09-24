@@ -65,24 +65,21 @@ const LoginForm = () => {
 		defaultValues,
 		resolver: zodResolver(loginSchema),
 	});
-	
+
 	useEffect(() => {
 		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
 	}, []);
 
-
 	useEffect(() => {
-    // Fetch the session ID from the API route
-    async function fetchSessionID() {
-      const res = await fetch('/utils/getSessionId');
-      const data = await res.json();
-      setSessionID(data.sessionID);
-    }
+		// Fetch the session ID from the API route
+		async function fetchSessionID() {
+			const res = await fetch('/utils/getSessionId');
+			const data = await res.json();
+			setSessionID(data.sessionID);
+		}
 
-    fetchSessionID();
+		fetchSessionID();
 	}, []);
-	
-	console.log(accessCodeChars);
 
 	const { handleSubmit } = methods;
 
