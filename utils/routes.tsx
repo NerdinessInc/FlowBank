@@ -9,6 +9,8 @@ import {
 	Wallet,
 	Info,
 	CreditCard,
+	Banknote,
+	Shuffle,
 } from 'lucide-react';
 
 export interface Route {
@@ -92,6 +94,18 @@ export const sidebarRoutes: Route[] = [
 		label: 'Customers Requests',
 		pathname: '/customers-requests',
 		icon: <MessageSquare className='h-4 w-4' />,
+		children: [
+			{
+				label: 'Cheque Book',
+				pathname: '/customers-requests/cheque-book',
+				icon: <Banknote className='h-4 w-4' />,
+			},
+			{
+				label: 'Miscellaneous',
+				pathname: '/customers-requests/miscellaneous',
+				icon: <Shuffle className='h-4 w-4' />,
+			},
+		],
 	},
 	{
 		label: 'Manage Funds',

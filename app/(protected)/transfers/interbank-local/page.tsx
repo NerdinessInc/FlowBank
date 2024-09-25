@@ -25,27 +25,35 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@radix-ui/react-label';
 
-export default function ThirdPartyTransfers() {
+export default function InterBankLocalTransfers() {
 	const thirdPartyTransfersSchema = z.object({
+		transferPlatform: z.string().min(1, 'Please choose your transfer platform'),
 		sourceAccount: z.string().min(1, 'Please enter your source account'),
 		dailyTransferLimit: z
 			.string()
 			.min(1, 'Please enter your daily transfer limit'),
-		beneficiary: z.string().min(1, 'Please enter your beneficiary'),
-		destinationAccount: z
-			.string()
-			.min(1, 'Please enter your destination account'),
+		destinationBank: z.string().min(1, 'Please enter your destination bank'),
+		beneficiaryAccount: z.string().min(1, 'Please enter your beneficiary'),
+		beneficiaryName: z.string().min(1, 'Please enter your beneficiary name'),
+		bvn: z.string().min(1, 'Please enter your bank verification number'),
+		narration: z.string().min(1, 'Please enter a narration'),
 		transferAmount: z.string().min(1, 'Please enter your transfer amount'),
 		transferCode: z.string().min(1, 'Please enter your transfer code'),
+		notificationMode: z.string().min(1, 'Please enter your notification mode'),
 	});
 
 	const defaultValues = {
+		transferPlatform: '',
 		sourceAccount: '',
 		dailyTransferLimit: '',
-		beneficiary: '',
-		destinationAccount: '',
+		destinationBank: '',
+		beneficiaryAccount: '',
+		beneficiaryName: '',
+		bvn: '',
+		narration: '',
 		transferAmount: '',
 		transferCode: '',
+		notificationMode: '',
 	};
 
 	const methods = useForm({
@@ -53,28 +61,67 @@ export default function ThirdPartyTransfers() {
 		resolver: zodResolver(thirdPartyTransfersSchema),
 	});
 
-	const { handleSubmit, setValue, getValues, watch } = methods;
+	const { handleSubmit, setValue, getValues, watch, reset } = methods;
 
 	const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
 		console.log(data);
 	};
 
-	console.log(watch());
-
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='text-2xl font-bold'>Third Party Transfers</h2>
+			<h2 className='text-2xl font-bold'>
+				Third Party Transfers (Other Banks)
+			</h2>
 
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='space-y-3 w-[90%] md:w-1/2'
+					className='w-[90%] md:w-2/3 grid grid-cols-2 gap-3'
 				>
+					<div className='col-span-2'>
+						<FormField
+							control={methods.control}
+							name='transferPlatform'
+							render={({ field }) => (
+								<FormItem className='col-span-1'>
+									<FormLabel>Transfer Platform</FormLabel>
+									<FormControl>
+										<Select
+											value={field.value}
+											onValueChange={(value) => field.onChange(value)}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder='Choose your Transfer Platform' />
+											</SelectTrigger>
+
+											<SelectContent>
+												<SelectItem value='neft'>
+													Neft (This will pass through Clearing)
+												</SelectItem>
+												<SelectItem value='nip'>NIP</SelectItem>
+											</SelectContent>
+										</Select>
+									</FormControl>
+
+									{watch('transferPlatform') === 'neft' && (
+										<FormMessage>
+											Please note that transactions initiated between 8:00AM and
+											12:00PM will be treated same day while those initiated
+											thereafter will be treated the following day.
+										</FormMessage>
+									)}
+
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
+
 					<FormField
 						control={methods.control}
 						name='sourceAccount'
 						render={({ field }) => (
-							<FormItem>
+							<FormItem className='col-span-2 md:col-span-1'>
 								<FormLabel>Source Account</FormLabel>
 								<FormControl>
 									<Select
@@ -102,13 +149,14 @@ export default function ThirdPartyTransfers() {
 						control={methods.control}
 						name='dailyTransferLimit'
 						render={({ field }) => (
-							<FormItem>
+							<FormItem className='col-span-2 md:col-span-1'>
 								<FormLabel>Daily Transfer Limit</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
 										placeholder='Enter your daily transfer limit'
 										required
+										disabled
 									/>
 								</FormControl>
 							</FormItem>
@@ -117,10 +165,38 @@ export default function ThirdPartyTransfers() {
 
 					<FormField
 						control={methods.control}
-						name='beneficiary'
+						name='destinationBank'
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Beneficiary</FormLabel>
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Destination Bank</FormLabel>
+								<FormControl>
+									<Select
+										value={field.value}
+										onValueChange={(value) => field.onChange(value)}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder='Select Destination Bank' />
+										</SelectTrigger>
+
+										<SelectContent>
+											<SelectItem value='bank1'>Bank 1</SelectItem>
+											<SelectItem value='bank2'>Bank 2</SelectItem>
+											<SelectItem value='bank3'>Bank 3</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormControl>
+
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={methods.control}
+						name='beneficiaryAccount'
+						render={({ field }) => (
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Beneficiary Account</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
@@ -134,15 +210,34 @@ export default function ThirdPartyTransfers() {
 
 					<FormField
 						control={methods.control}
-						name='destinationAccount'
+						name='beneficiaryName'
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Destination Account</FormLabel>
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Beneficiary Name</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
-										placeholder='Enter your destination account'
+										placeholder='Enter your beneficiary name'
 										required
+										disabled
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={methods.control}
+						name='bvn'
+						render={({ field }) => (
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Bank Verification Number</FormLabel>
+								<FormControl>
+									<Input
+										{...field}
+										placeholder='Enter your bank Verification Number'
+										required
+										disabled
 									/>
 								</FormControl>
 							</FormItem>
@@ -153,7 +248,7 @@ export default function ThirdPartyTransfers() {
 						control={methods.control}
 						name='transferAmount'
 						render={({ field }) => (
-							<FormItem>
+							<FormItem className='col-span-2 md:col-span-1'>
 								<FormLabel>Transfer Amount</FormLabel>
 								<FormControl>
 									<Input
@@ -168,9 +263,26 @@ export default function ThirdPartyTransfers() {
 
 					<FormField
 						control={methods.control}
+						name='narration'
+						render={({ field }) => (
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Narration</FormLabel>
+								<FormControl>
+									<Input
+										{...field}
+										placeholder='Enter your narration'
+										required
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={methods.control}
 						name='transferCode'
 						render={({ field }) => (
-							<FormItem>
+							<FormItem className='col-span-2 md:col-span-1'>
 								<FormLabel>Transfer Code</FormLabel>
 								<FormControl>
 									<Input
@@ -184,8 +296,8 @@ export default function ThirdPartyTransfers() {
 						)}
 					/>
 
-					<div className='grid grid-cols-3 gap-3'>
-						<div className='col-span-1'>
+					<div className='col-span-2 md:col-span-1 grid grid-cols-3 gap-3 place-content-end'>
+						<div className='col-span-3 md:col-span-1'>
 							<Label>Numbers</Label>
 							<Select
 								onValueChange={(newValue) => {
@@ -213,7 +325,7 @@ export default function ThirdPartyTransfers() {
 							</Select>
 						</div>
 
-						<div className='col-span-1'>
+						<div className='col-span-3 md:col-span-1'>
 							<Label>Big Letters</Label>
 							<Select
 								onValueChange={(newValue) => {
@@ -259,7 +371,7 @@ export default function ThirdPartyTransfers() {
 							</Select>
 						</div>
 
-						<div className='col-span-1'>
+						<div className='col-span-3 md:col-span-1'>
 							<Label>Small Letters</Label>
 							<Select
 								onValueChange={(newValue) => {
@@ -304,9 +416,50 @@ export default function ThirdPartyTransfers() {
 						</div>
 					</div>
 
-					<Button className='w-full font-semibold mt-3' type='submit'>
-						Submit
-					</Button>
+					<FormField
+						control={methods.control}
+						name='notificationMode'
+						render={({ field }) => (
+							<FormItem className='col-span-2 md:col-span-1'>
+								<FormLabel>Notification Mode</FormLabel>
+								<FormControl>
+									<Select
+										value={field.value}
+										onValueChange={(value) => field.onChange(value)}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder='Select your notification mode' />
+										</SelectTrigger>
+
+										<SelectContent>
+											<SelectItem value='email'>Email</SelectItem>
+											<SelectItem value='sms'>SMS</SelectItem>
+											<SelectItem value='none'>None</SelectItem>
+											<SelectItem value='emailOnly'>Email Only</SelectItem>
+											<SelectItem value='smsOnly'>SMS Only</SelectItem>
+											<SelectItem value='both'>Email & SMS</SelectItem>
+											<SelectItem value='disabled'>Disabled</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormControl>
+
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<div className='col-span-2 md:col-span-1 flex justify-between items-end gap-6'>
+						<Button className='w-full font-semibold mt-3' type='submit'>
+							Submit
+						</Button>
+
+						<Button
+							className='w-full font-semibold mt-3'
+							onClick={() => reset()}
+						>
+							Clear
+						</Button>
+					</div>
 				</form>
 			</Form>
 		</main>
