@@ -16,9 +16,9 @@ export default function handler(req, res) {
       req.socket.remoteAddress ||
       (req.connection.socket ? req.connection.socket.remoteAddress : null);
 
-    // Concatenate the random number with the IP
-    sessionID = `${randomNumber}_${ip}`;
-
+    // Concatenate the random number with space and the IP
+    sessionID = `${randomNumber} ${ip}`;
+    console.log("SessionID:", sessionID);
     // Set the sessionID as a cookie
     setCookie(res, "sessionID", sessionID);
   }

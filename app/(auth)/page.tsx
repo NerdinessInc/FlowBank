@@ -66,20 +66,23 @@ const LoginForm = () => {
 		resolver: zodResolver(loginSchema),
 	});
 
+	
 	useEffect(() => {
 		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
 	}, []);
 
 	useEffect(() => {
-		// Fetch the session ID from the API route
-		async function fetchSessionID() {
-			const res = await fetch('/utils/getSessionId');
-			const data = await res.json();
-			setSessionID(data.sessionID);
-		}
-
-		fetchSessionID();
-	}, []);
+  async function fetchSessionID() {
+    const res = await fetch('/api/getSessionId'); // Fetching from the app/api route
+    if (res.ok) {
+      const data = await res.json();
+      setSessionID(data.sessionID);
+    } else {
+      console.error('Failed to fetch session ID');
+    }
+  }
+  fetchSessionID();
+}, []);
 
 	const { handleSubmit } = methods;
 
