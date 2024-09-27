@@ -1,7 +1,5 @@
 'use client';
 
-import { cookies } from "next/headers";
-
 // Function to set a cookie
 export const setCookie = (
 	name: string,

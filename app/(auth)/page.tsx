@@ -36,6 +36,9 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover';
 
+// store
+import { appStore } from '@/store';
+
 // services
 import { authUser, getAccessCode } from '@/services/api';
 
@@ -44,6 +47,8 @@ export const description =
 
 const LoginForm = () => {
 	// const router = useRouter();
+	const { login } = appStore();
+
 	const { toast } = useToast();
 
 	const [accessCodeChars, setAccessCodeChars] = useState<any>({});
@@ -66,36 +71,41 @@ const LoginForm = () => {
 		resolver: zodResolver(loginSchema),
 	});
 
-	
 	useEffect(() => {
 		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
 	}, []);
 
 	useEffect(() => {
-  async function fetchSessionID() {
-    const res = await fetch('/api/getSessionId'); // Fetching from the app/api route
-    if (res.ok) {
-      const data = await res.json();
-      setSessionID(data.sessionID);
-    } else {
-      console.error('Failed to fetch session ID');
-    }
-  }
-  fetchSessionID();
-}, []);
+		async function fetchSessionID() {
+			const res = await fetch('/api/getSessionId');
+
+			if (res.ok) {
+				const data = await res.json();
+				setSessionID(data.sessionID);
+			} else {
+				console.error('Failed to fetch session ID');
+			}
+		}
+
+		fetchSessionID();
+	}, []);
 
 	const { handleSubmit } = methods;
 
 	const authUserMutation = useMutation({
 		mutationFn: authUser,
 		onSuccess: (res: any) => {
-			console.log(res);
-
 			if (!res.success) {
 				toast({
 					title: res.errorMessage,
 					variant: 'destructive',
 				});
+			} else {
+				toast({
+					title: 'Login Successful',
+				});
+
+				login(res);
 			}
 		},
 	});
