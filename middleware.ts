@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
 	const cookies = request.cookies;
 
-	const userData = cookies.get('nomase_u')?.value || null;
+	const userData = cookies.get('nomase_user')?.value || null;
 
 	const path = request.nextUrl.pathname;
 

@@ -188,9 +188,9 @@ export interface UserDataResponse {
 	userAccountLocked: boolean;
 	numberOfAccounts: number | null;
 	enumRec: EnumRec;
-	UserRec: UserRec;
+	userRec: UserRec;
 	oraresp: OraResp;
-	AcctCollection: AcctCollection;
+	acctCollection: AcctCollection;
 	NumberOfAccounts: number;
 	userdat: string;
 	cod_prod: CodProd;

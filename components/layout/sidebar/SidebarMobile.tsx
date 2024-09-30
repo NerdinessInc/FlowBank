@@ -1,15 +1,24 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { Menu } from 'lucide-react';
+// icons
+import { Menu, LogOut } from 'lucide-react';
 
+// components
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
+// utils
 import { sidebarRoutes, renderRoutes } from '@/utils';
+
+// store
+import { appStore } from '@/store';
 
 export const SidebarMobile = () => {
 	const pathname = usePathname();
+
+	const { logout } = appStore();
+
 	const [openItems, setOpenItems] = useState<string[]>([]);
 
 	return (
@@ -33,6 +42,13 @@ export const SidebarMobile = () => {
 					openItems,
 					setOpenItems,
 				})}
+
+				<div className='mt-12 px-4'>
+					<Button variant={'outline'} className='gap-2' onClick={logout}>
+						<LogOut className='h-4 w-4' />
+						Log Out
+					</Button>
+				</div>
 			</SheetContent>
 		</Sheet>
 	);

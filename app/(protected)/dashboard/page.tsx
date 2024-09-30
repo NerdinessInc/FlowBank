@@ -5,6 +5,7 @@ import Image from 'next/image';
 
 import { ActivitySquare, Banknote, CreditCard } from 'lucide-react';
 
+// components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Carousel,
@@ -19,17 +20,30 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+import { Loading } from '@/components/Loader';
+
+// store
+import { appStore } from '@/store';
 
 export default function Dashboard() {
+	const { userData, appData } = appStore();
+
+	console.log(userData);
+	console.log(appData);
+
 	const advertImages: string[] = [
 		'https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
 		'https://images.unsplash.com/photo-1725714835081-118a2b0456b2?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
 		'https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
 	];
 
+	if (!userData) return <Loading />;
+
 	return (
 		<main className='h-full w-full flex flex-col gap-6'>
-			<h2 className='text-2xl font-bold'>Welcome, Segun Olagunju</h2>
+			<h2 className='text-2xl font-bold'>
+				Welcome, {userData?.userRec?.pFullName}
+			</h2>
 
 			<div className='grid gap-2 md:grid-cols-3'>
 				<Card x-chunk='dashboard-01-chunk-0'>
@@ -88,12 +102,16 @@ export default function Dashboard() {
 							</TableHeader>
 
 							<TableBody>
-								<TableRow>
-									<TableCell>1234567890</TableCell>
-									<TableCell>Segun Olagunju</TableCell>
-									<TableCell>USD</TableCell>
-									<TableCell>Savings</TableCell>
-								</TableRow>
+								{userData?.acctCollection?.AcctStruct.slice(1).map(
+									(account, index) => (
+										<TableRow key={index}>
+											<TableCell>{account.AccountNumber}</TableCell>
+											<TableCell>{account.accountName}</TableCell>
+											<TableCell>{account.IsoCurrencyName}</TableCell>
+											<TableCell>{account.cod_acct_type}</TableCell>
+										</TableRow>
+									)
+								)}
 							</TableBody>
 						</Table>
 					</CardContent>
