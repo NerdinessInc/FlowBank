@@ -11,6 +11,11 @@ import {
 	CreditCard,
 	Banknote,
 	Shuffle,
+	Ban,
+	Bolt,
+	Pause,
+	Nfc,
+	ArrowDownUp,
 } from 'lucide-react';
 
 export interface Route {
@@ -62,6 +67,23 @@ export const sidebarRoutes: Route[] = [
 		label: 'Statements',
 		pathname: '/statements',
 		icon: <FileText className='h-4 w-4' />,
+		children: [
+			{
+				label: 'CR Listing',
+				pathname: '/statements/cr-listing',
+				icon: <FileText className='h-4 w-4' />,
+			},
+			{
+				label: 'DR Listing',
+				pathname: '/statements/dr-listing',
+				icon: <FileText className='h-4 w-4' />,
+			},
+			{
+				label: 'Full Statement',
+				pathname: '/statements/full',
+				icon: <FileText className='h-4 w-4' />,
+			},
+		],
 	},
 	{
 		label: 'Transfers',
@@ -91,6 +113,23 @@ export const sidebarRoutes: Route[] = [
 		],
 	},
 	{
+		label: 'Payments',
+		pathname: '/payments',
+		icon: <Wallet className='h-4 w-4' />,
+		children: [
+			{
+				label: 'Airtime',
+				pathname: '/payments/airtime',
+				icon: <Nfc className='h-4 w-4' />,
+			},
+			{
+				label: 'Data',
+				pathname: '/payments/data',
+				icon: <ArrowDownUp className='h-4 w-4' />,
+			},
+		],
+	},
+	{
 		label: 'Customers Requests',
 		pathname: '/customers-requests',
 		icon: <MessageSquare className='h-4 w-4' />,
@@ -101,9 +140,19 @@ export const sidebarRoutes: Route[] = [
 				icon: <Banknote className='h-4 w-4' />,
 			},
 			{
+				label: 'Stop Payment',
+				pathname: '/customers-requests/stop-payment',
+				icon: <Ban className='h-4 w-4' />,
+			},
+			{
 				label: 'Miscellaneous',
 				pathname: '/customers-requests/miscellaneous',
 				icon: <Shuffle className='h-4 w-4' />,
+			},
+			{
+				label: 'Standing Instruction',
+				pathname: '/customers-requests/standing-instruction',
+				icon: <Bolt className='h-4 w-4' />,
 			},
 		],
 	},
@@ -111,6 +160,13 @@ export const sidebarRoutes: Route[] = [
 		label: 'Manage Funds',
 		pathname: '/manage-funds',
 		icon: <PiggyBank className='h-4 w-4' />,
+		children: [
+			{
+				label: 'Create Holds',
+				pathname: '/manage-funds/create-holds',
+				icon: <Pause className='h-4 w-4' />,
+			},
+		],
 	},
 ];
 
