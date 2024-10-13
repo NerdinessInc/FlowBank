@@ -28,6 +28,7 @@ import { appStore } from '@/store';
 export default function Dashboard() {
 	const { userData, appData } = appStore();
 
+	console.log("USer Data Returned")
 	console.log(userData);
 	console.log(appData);
 

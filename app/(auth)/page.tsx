@@ -95,6 +95,8 @@ const LoginForm = () => {
 	const authUserMutation = useMutation({
 		mutationFn: authUser,
 		onSuccess: (res: any) => {
+			console.log("Login Response")
+			console.log(res);
 			if (!res.success) {
 				toast({
 					title: res.errorMessage,
@@ -225,3 +227,7 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
+function wait(arg0: number) {
+	throw new Error('Function not implemented.');
+}
+
