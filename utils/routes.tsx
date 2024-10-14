@@ -43,17 +43,17 @@ export const sidebarRoutes: Route[] = [
 		children: [
 			{
 				label: 'My Accounts',
-				pathname: '/my-accounts',
+				pathname: '/account-information/my-accounts',
 				icon: <CreditCard className='h-4 w-4' />,
 			},
 			{
 				label: 'Summary',
-				pathname: '/summary',
+				pathname: '/account-information/summary',
 				icon: <FileText className='h-4 w-4' />,
 			},
 			{
 				label: 'Details',
-				pathname: '/details',
+				pathname: '/account-information/details',
 				icon: <Info className='h-4 w-4' />,
 			},
 		],

@@ -15,7 +15,11 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
+
 import { Input } from '@/components/ui/input';
+
+import { Separator } from '@/components/ui/separator';
+
 import {
 	Select,
 	SelectContent,
@@ -23,7 +27,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@radix-ui/react-label';
+
+import { Label } from '@/components/ui/label';
 
 export default function InterBankLocalTransfers() {
 	const thirdPartyTransfersSchema = z.object({
@@ -76,7 +81,7 @@ export default function InterBankLocalTransfers() {
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='w-[90%] md:w-2/3 grid grid-cols-2 gap-3'
+					className='w-[90%] md:w-2/3 grid grid-cols-2 gap-3 border border-border rounded-md p-6'
 				>
 					<div className='col-span-2'>
 						<FormField
@@ -117,348 +122,356 @@ export default function InterBankLocalTransfers() {
 						/>
 					</div>
 
-					<FormField
-						control={methods.control}
-						name='sourceAccount'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Source Account</FormLabel>
-								<FormControl>
+					<div className='col-span-2 flex flex-col md:flex-row justify-between gap-3'>
+						<div className='flex-1 space-y-2 '>
+							<FormField
+								control={methods.control}
+								name='sourceAccount'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Source Account</FormLabel>
+										<FormControl>
+											<Select
+												value={field.value}
+												onValueChange={(value) => field.onChange(value)}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select your source account' />
+												</SelectTrigger>
+
+												<SelectContent>
+													<SelectItem value='account1'>Account 1</SelectItem>
+													<SelectItem value='account2'>Account 2</SelectItem>
+													<SelectItem value='account3'>Account 3</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='destinationBank'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Destination Bank</FormLabel>
+										<FormControl>
+											<Select
+												value={field.value}
+												onValueChange={(value) => field.onChange(value)}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Destination Bank' />
+												</SelectTrigger>
+
+												<SelectContent>
+													<SelectItem value='bank1'>Bank 1</SelectItem>
+													<SelectItem value='bank2'>Bank 2</SelectItem>
+													<SelectItem value='bank3'>Bank 3</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='beneficiaryName'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Beneficiary Name</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your beneficiary name'
+												required
+												disabled
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='transferAmount'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Transfer Amount</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your transfer amount'
+												required
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='transferCode'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Transfer Code</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your transfer code'
+												required
+												disabled
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='notificationMode'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Notification Mode</FormLabel>
+										<FormControl>
+											<Select
+												value={field.value}
+												onValueChange={(value) => field.onChange(value)}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select your notification mode' />
+												</SelectTrigger>
+
+												<SelectContent>
+													<SelectItem value='email'>Email</SelectItem>
+													<SelectItem value='sms'>SMS</SelectItem>
+													<SelectItem value='none'>None</SelectItem>
+													<SelectItem value='emailOnly'>Email Only</SelectItem>
+													<SelectItem value='smsOnly'>SMS Only</SelectItem>
+													<SelectItem value='both'>Email & SMS</SelectItem>
+													<SelectItem value='disabled'>Disabled</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+
+						<Separator orientation='vertical' className='hidden md:block' />
+
+						<div className='flex-1 space-y-2 '>
+							<FormField
+								control={methods.control}
+								name='dailyTransferLimit'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Daily Transfer Limit</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your daily transfer limit'
+												required
+												disabled
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='beneficiaryAccount'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Beneficiary Account</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your beneficiary'
+												required
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='bvn'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Bank Verification Number</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your bank Verification Number'
+												required
+												disabled
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={methods.control}
+								name='narration'
+								render={({ field }) => (
+									<FormItem className='col-span-2 md:col-span-1'>
+										<FormLabel>Narration</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your narration'
+												required
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<div className='col-span-2 md:col-span-1 grid grid-cols-3 gap-3 place-content-end'>
+								<div className='col-span-3 md:col-span-1'>
+									<Label>Numbers</Label>
 									<Select
-										value={field.value}
-										onValueChange={(value) => field.onChange(value)}
+										onValueChange={(newValue) => {
+											const currentValue = getValues('transferCode');
+											setValue('transferCode', (currentValue || '') + newValue);
+										}}
 									>
 										<SelectTrigger>
-											<SelectValue placeholder='Select your source account' />
+											<SelectValue placeholder='*' />
 										</SelectTrigger>
 
 										<SelectContent>
-											<SelectItem value='account1'>Account 1</SelectItem>
-											<SelectItem value='account2'>Account 2</SelectItem>
-											<SelectItem value='account3'>Account 3</SelectItem>
+											<SelectItem value='*'>*</SelectItem>
+											<SelectItem value='0'>0</SelectItem>
+											<SelectItem value='1'>1</SelectItem>
+											<SelectItem value='2'>2</SelectItem>
+											<SelectItem value='3'>3</SelectItem>
+											<SelectItem value='4'>4</SelectItem>
+											<SelectItem value='5'>5</SelectItem>
+											<SelectItem value='6'>6</SelectItem>
+											<SelectItem value='7'>7</SelectItem>
+											<SelectItem value='8'>8</SelectItem>
+											<SelectItem value='9'>9</SelectItem>
 										</SelectContent>
 									</Select>
-								</FormControl>
+								</div>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='dailyTransferLimit'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Daily Transfer Limit</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your daily transfer limit'
-										required
-										disabled
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='destinationBank'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Destination Bank</FormLabel>
-								<FormControl>
+								<div className='col-span-3 md:col-span-1'>
+									<Label>Big Letters</Label>
 									<Select
-										value={field.value}
-										onValueChange={(value) => field.onChange(value)}
+										onValueChange={(newValue) => {
+											const currentValue = getValues('transferCode');
+											console.log(currentValue);
+
+											setValue('transferCode', (currentValue || '') + newValue);
+										}}
 									>
 										<SelectTrigger>
-											<SelectValue placeholder='Select Destination Bank' />
+											<SelectValue placeholder='*' />
 										</SelectTrigger>
 
 										<SelectContent>
-											<SelectItem value='bank1'>Bank 1</SelectItem>
-											<SelectItem value='bank2'>Bank 2</SelectItem>
-											<SelectItem value='bank3'>Bank 3</SelectItem>
+											<SelectItem value='*'>*</SelectItem>
+											<SelectItem value='A'>A</SelectItem>
+											<SelectItem value='B'>B</SelectItem>
+											<SelectItem value='C'>C</SelectItem>
+											<SelectItem value='D'>D</SelectItem>
+											<SelectItem value='E'>E</SelectItem>
+											<SelectItem value='F'>F</SelectItem>
+											<SelectItem value='G'>G</SelectItem>
+											<SelectItem value='H'>H</SelectItem>
+											<SelectItem value='I'>I</SelectItem>
+											<SelectItem value='J'>J</SelectItem>
+											<SelectItem value='K'>K</SelectItem>
+											<SelectItem value='L'>L</SelectItem>
+											<SelectItem value='M'>M</SelectItem>
+											<SelectItem value='N'>N</SelectItem>
+											<SelectItem value='O'>O</SelectItem>
+											<SelectItem value='P'>P</SelectItem>
+											<SelectItem value='Q'>Q</SelectItem>
+											<SelectItem value='R'>R</SelectItem>
+											<SelectItem value='S'>S</SelectItem>
+											<SelectItem value='T'>T</SelectItem>
+											<SelectItem value='U'>U</SelectItem>
+											<SelectItem value='V'>V</SelectItem>
+											<SelectItem value='W'>W</SelectItem>
+											<SelectItem value='X'>X</SelectItem>
+											<SelectItem value='Y'>Y</SelectItem>
+											<SelectItem value='Z'>Z</SelectItem>
 										</SelectContent>
 									</Select>
-								</FormControl>
+								</div>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='beneficiaryAccount'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Beneficiary Account</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your beneficiary'
-										required
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='beneficiaryName'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Beneficiary Name</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your beneficiary name'
-										required
-										disabled
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='bvn'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Bank Verification Number</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your bank Verification Number'
-										required
-										disabled
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='transferAmount'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Transfer Amount</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your transfer amount'
-										required
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='narration'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Narration</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your narration'
-										required
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='transferCode'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Transfer Code</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your transfer code'
-										required
-										disabled
-									/>
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-
-					<div className='col-span-2 md:col-span-1 grid grid-cols-3 gap-3 place-content-end'>
-						<div className='col-span-3 md:col-span-1'>
-							<Label>Numbers</Label>
-							<Select
-								onValueChange={(newValue) => {
-									const currentValue = getValues('transferCode');
-									setValue('transferCode', (currentValue || '') + newValue);
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder='*' />
-								</SelectTrigger>
-
-								<SelectContent>
-									<SelectItem value='*'>*</SelectItem>
-									<SelectItem value='0'>0</SelectItem>
-									<SelectItem value='1'>1</SelectItem>
-									<SelectItem value='2'>2</SelectItem>
-									<SelectItem value='3'>3</SelectItem>
-									<SelectItem value='4'>4</SelectItem>
-									<SelectItem value='5'>5</SelectItem>
-									<SelectItem value='6'>6</SelectItem>
-									<SelectItem value='7'>7</SelectItem>
-									<SelectItem value='8'>8</SelectItem>
-									<SelectItem value='9'>9</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className='col-span-3 md:col-span-1'>
-							<Label>Big Letters</Label>
-							<Select
-								onValueChange={(newValue) => {
-									const currentValue = getValues('transferCode');
-									console.log(currentValue);
-
-									setValue('transferCode', (currentValue || '') + newValue);
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder='*' />
-								</SelectTrigger>
-
-								<SelectContent>
-									<SelectItem value='*'>*</SelectItem>
-									<SelectItem value='A'>A</SelectItem>
-									<SelectItem value='B'>B</SelectItem>
-									<SelectItem value='C'>C</SelectItem>
-									<SelectItem value='D'>D</SelectItem>
-									<SelectItem value='E'>E</SelectItem>
-									<SelectItem value='F'>F</SelectItem>
-									<SelectItem value='G'>G</SelectItem>
-									<SelectItem value='H'>H</SelectItem>
-									<SelectItem value='I'>I</SelectItem>
-									<SelectItem value='J'>J</SelectItem>
-									<SelectItem value='K'>K</SelectItem>
-									<SelectItem value='L'>L</SelectItem>
-									<SelectItem value='M'>M</SelectItem>
-									<SelectItem value='N'>N</SelectItem>
-									<SelectItem value='O'>O</SelectItem>
-									<SelectItem value='P'>P</SelectItem>
-									<SelectItem value='Q'>Q</SelectItem>
-									<SelectItem value='R'>R</SelectItem>
-									<SelectItem value='S'>S</SelectItem>
-									<SelectItem value='T'>T</SelectItem>
-									<SelectItem value='U'>U</SelectItem>
-									<SelectItem value='V'>V</SelectItem>
-									<SelectItem value='W'>W</SelectItem>
-									<SelectItem value='X'>X</SelectItem>
-									<SelectItem value='Y'>Y</SelectItem>
-									<SelectItem value='Z'>Z</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className='col-span-3 md:col-span-1'>
-							<Label>Small Letters</Label>
-							<Select
-								onValueChange={(newValue) => {
-									const currentValue = getValues('transferCode');
-									setValue('transferCode', (currentValue || '') + newValue);
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder='*' />
-								</SelectTrigger>
-
-								<SelectContent>
-									<SelectItem value='*'>*</SelectItem>
-									<SelectItem value='a'>a</SelectItem>
-									<SelectItem value='b'>b</SelectItem>
-									<SelectItem value='c'>c</SelectItem>
-									<SelectItem value='d'>d</SelectItem>
-									<SelectItem value='e'>e</SelectItem>
-									<SelectItem value='f'>f</SelectItem>
-									<SelectItem value='g'>g</SelectItem>
-									<SelectItem value='h'>h</SelectItem>
-									<SelectItem value='i'>i</SelectItem>
-									<SelectItem value='j'>j</SelectItem>
-									<SelectItem value='k'>k</SelectItem>
-									<SelectItem value='l'>l</SelectItem>
-									<SelectItem value='m'>m</SelectItem>
-									<SelectItem value='n'>n</SelectItem>
-									<SelectItem value='o'>o</SelectItem>
-									<SelectItem value='p'>p</SelectItem>
-									<SelectItem value='q'>q</SelectItem>
-									<SelectItem value='r'>r</SelectItem>
-									<SelectItem value='s'>s</SelectItem>
-									<SelectItem value='t'>t</SelectItem>
-									<SelectItem value='u'>u</SelectItem>
-									<SelectItem value='v'>v</SelectItem>
-									<SelectItem value='w'>w</SelectItem>
-									<SelectItem value='x'>x</SelectItem>
-									<SelectItem value='y'>y</SelectItem>
-									<SelectItem value='z'>z</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
-
-					<FormField
-						control={methods.control}
-						name='notificationMode'
-						render={({ field }) => (
-							<FormItem className='col-span-2 md:col-span-1'>
-								<FormLabel>Notification Mode</FormLabel>
-								<FormControl>
+								<div className='col-span-3 md:col-span-1'>
+									<Label>Small Letters</Label>
 									<Select
-										value={field.value}
-										onValueChange={(value) => field.onChange(value)}
+										onValueChange={(newValue) => {
+											const currentValue = getValues('transferCode');
+											setValue('transferCode', (currentValue || '') + newValue);
+										}}
 									>
 										<SelectTrigger>
-											<SelectValue placeholder='Select your notification mode' />
+											<SelectValue placeholder='*' />
 										</SelectTrigger>
 
 										<SelectContent>
-											<SelectItem value='email'>Email</SelectItem>
-											<SelectItem value='sms'>SMS</SelectItem>
-											<SelectItem value='none'>None</SelectItem>
-											<SelectItem value='emailOnly'>Email Only</SelectItem>
-											<SelectItem value='smsOnly'>SMS Only</SelectItem>
-											<SelectItem value='both'>Email & SMS</SelectItem>
-											<SelectItem value='disabled'>Disabled</SelectItem>
+											<SelectItem value='*'>*</SelectItem>
+											<SelectItem value='a'>a</SelectItem>
+											<SelectItem value='b'>b</SelectItem>
+											<SelectItem value='c'>c</SelectItem>
+											<SelectItem value='d'>d</SelectItem>
+											<SelectItem value='e'>e</SelectItem>
+											<SelectItem value='f'>f</SelectItem>
+											<SelectItem value='g'>g</SelectItem>
+											<SelectItem value='h'>h</SelectItem>
+											<SelectItem value='i'>i</SelectItem>
+											<SelectItem value='j'>j</SelectItem>
+											<SelectItem value='k'>k</SelectItem>
+											<SelectItem value='l'>l</SelectItem>
+											<SelectItem value='m'>m</SelectItem>
+											<SelectItem value='n'>n</SelectItem>
+											<SelectItem value='o'>o</SelectItem>
+											<SelectItem value='p'>p</SelectItem>
+											<SelectItem value='q'>q</SelectItem>
+											<SelectItem value='r'>r</SelectItem>
+											<SelectItem value='s'>s</SelectItem>
+											<SelectItem value='t'>t</SelectItem>
+											<SelectItem value='u'>u</SelectItem>
+											<SelectItem value='v'>v</SelectItem>
+											<SelectItem value='w'>w</SelectItem>
+											<SelectItem value='x'>x</SelectItem>
+											<SelectItem value='y'>y</SelectItem>
+											<SelectItem value='z'>z</SelectItem>
 										</SelectContent>
 									</Select>
-								</FormControl>
+								</div>
+							</div>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+							<div className='col-span-2 md:col-span-1 flex justify-between items-end gap-6 md:mt-6'>
+								<Button className='w-full font-semibold mt-3' type='submit'>
+									Submit
+								</Button>
 
-					<div className='col-span-2 md:col-span-1 flex justify-between items-end gap-6'>
-						<Button className='w-full font-semibold mt-3' type='submit'>
-							Submit
-						</Button>
-
-						<Button
-							className='w-full font-semibold mt-3'
-							onClick={() => reset()}
-						>
-							Clear
-						</Button>
+								<Button
+									className='w-full font-semibold mt-3'
+									onClick={() => reset()}
+								>
+									Clear
+								</Button>
+							</div>
+						</div>
 					</div>
 				</form>
 			</Form>

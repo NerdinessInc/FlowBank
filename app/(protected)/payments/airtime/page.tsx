@@ -59,7 +59,7 @@ export default function AirtimePayment() {
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='space-y-3 w-[90%] md:w-1/2'
+					className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
 				>
 					<FormField
 						control={methods.control}

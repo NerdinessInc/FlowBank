@@ -67,14 +67,12 @@ export default function FullStatement() {
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='text-2xl font-bold'>
-				Supply History/Statement Parameters
-			</h2>
+			<h2 className='text-2xl font-bold'>Full Statement</h2>
 
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='space-y-3 w-[90%] md:w-1/2'
+					className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
 				>
 					<FormField
 						control={methods.control}

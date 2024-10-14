@@ -28,8 +28,6 @@ import { appStore } from '@/store';
 export default function Dashboard() {
 	const { userData, appData } = appStore();
 
-	console.log("USer Data Returned")
-	console.log(userData);
 	console.log(appData);
 
 	const advertImages: string[] = [
@@ -85,39 +83,37 @@ export default function Dashboard() {
 				</Card>
 			</div>
 
-			<div>
-				<Card>
-					<CardHeader className='flex flex-row items-center'>
-						<CardTitle>My Accounts</CardTitle>
-					</CardHeader>
+			<Card>
+				<CardHeader className='flex flex-row items-center'>
+					<CardTitle>My Accounts</CardTitle>
+				</CardHeader>
 
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Account Number</TableHead>
-									<TableHead>Account Title</TableHead>
-									<TableHead>Currency</TableHead>
-									<TableHead>Type</TableHead>
-								</TableRow>
-							</TableHeader>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Account Number</TableHead>
+								<TableHead>Account Title</TableHead>
+								<TableHead>Currency</TableHead>
+								<TableHead>Type</TableHead>
+							</TableRow>
+						</TableHeader>
 
-							<TableBody>
-								{userData?.acctCollection?.AcctStruct.slice(1).map(
-									(account, index) => (
-										<TableRow key={index}>
-											<TableCell>{account.AccountNumber}</TableCell>
-											<TableCell>{account.accountName}</TableCell>
-											<TableCell>{account.IsoCurrencyName}</TableCell>
-											<TableCell>{account.cod_acct_type}</TableCell>
-										</TableRow>
-									)
-								)}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
-			</div>
+						<TableBody>
+							{userData?.acctCollection?.AcctStruct?.slice(1).map(
+								(account, index) => (
+									<TableRow key={index}>
+										<TableCell>{account.AccountNumber}</TableCell>
+										<TableCell>{account.accountName}</TableCell>
+										<TableCell>{account.IsoCurrencyName}</TableCell>
+										<TableCell>{account.cod_acct_type}</TableCell>
+									</TableRow>
+								)
+							)}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
 
 			<Carousel
 				className='mt-4'

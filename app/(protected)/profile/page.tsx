@@ -49,7 +49,10 @@ export default function Profile() {
 			<h2 className='font-semibold text-2xl'>Change User&apos;s Password</h2>
 
 			<Form {...methods}>
-				<form onSubmit={handleSubmit(onSubmit)} className='space-y-3 w-[90%] md:w-1/2'>
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
+				>
 					<FormField
 						control={methods.control}
 						name='username'

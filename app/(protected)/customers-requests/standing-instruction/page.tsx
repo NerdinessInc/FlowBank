@@ -1,10 +1,16 @@
 'use client';
 
 import { format } from 'date-fns';
+
+// form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+// icons
 import { CalendarIcon } from 'lucide-react';
+
+// components
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -29,6 +35,8 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+
+// utils
 import { cn } from '@/lib/utils';
 
 export default function StandingInstruction() {
@@ -70,7 +78,7 @@ export default function StandingInstruction() {
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='col-span-2 grid grid-cols-2 gap-6'
+					className='col-span-2 grid grid-cols-2 gap-6 border border-border rounded-md p-6 divide-x'
 				>
 					<div className='col-span-2 md:col-span-1 flex flex-col justify-center items-center'>
 						<h2 className='text-2xl font-bold mb-4'>
