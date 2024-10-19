@@ -71,6 +71,7 @@ const appStore = create<AppStore>()((set) => ({
     setCookie('nomase_main', JSON.stringify(mainMenuCookieData));
 
     console.log('Cookies saved successfully!');
+    console.log(userCookieData);
 
     location.href = '/dashboard';
   },

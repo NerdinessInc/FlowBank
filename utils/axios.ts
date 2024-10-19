@@ -2,7 +2,7 @@ import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 
 const instance = axios.create({
-	baseURL: 'http://www.nomase.uat.nerdiness.ca',
+	baseURL: 'http://www.ibank.nomase.nerdiness.ca',
 	headers: {
 		'Access-Control-Allow-Origin': '*',
 		'Content-Type': 'application/soap+xml',
