@@ -73,3 +73,55 @@ export const authUser = async (values: any) => {
 		};
 	}
 };
+
+
+export const ReturnAcctDetails2 = async (reqType: any, userRec: any, values: any) => {
+	const AcctDetail2Body = `
+	<ReturnAcctDetails2 xmlns="http://con.Ibplc.org/">
+	  <ID>${reqType}</ID>
+      <CustomerID>${values?.slice(1, 2)?.[0].CustomerID}</CustomerID>
+      <AccountNo>${values?.slice(1, 2)?.[0].AccountNumber}</AccountNo>
+      <pacesscode>${userRec.pAcessCode}</pacesscode>
+      <pUsername>${userRec.pUserName}</pUsername>
+	</ReturnAcctDetails2>`
+		.trim()
+		.replace(/\s+/g, ' ');
+	
+	console.log(AcctDetail2Body);
+	const { data } = await soapRequest(
+		'/NibssService/NibssAppService.asmx',
+		AcctDetail2Body
+	);
+
+	try {
+		const result = data['ReturnAcctDetails2Result'];
+		const responseString = result.rs.string
+		console.log(responseString)
+		const parsedAccountDetails = responseString.slice(1).map((accountString: string) => {
+        const [accountNumber,
+          description,
+          bookBalance,
+          availBal,
+          uncleared,
+          currency,
+          type] = accountString.split('|');
+        return {
+          accountNumber,
+          description,
+          bookBalance,
+          availBal,
+          uncleared,
+          currency,
+          type
+        };
+      });
+		console.log("ReturnAcctDetails2Result");
+		console.log(parsedAccountDetails);
+		return { success: true, data: parsedAccountDetails };
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Something went wrong!',
+		};
+	}
+};
