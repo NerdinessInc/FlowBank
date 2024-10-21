@@ -1,11 +1,13 @@
 'use client';
 
-// form
+// forms
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { z } from 'zod';
 
 // components
+import { Button } from '@/components/ui/button';
 import {
 	Form,
 	FormControl,
@@ -14,8 +16,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import {
 	Select,
 	SelectContent,
@@ -25,7 +27,9 @@ import {
 } from '@/components/ui/select';
 
 export default function InternalTransfers() {
-	const internalTransferScheme = z.object({
+	const [step, setStep] = useState(1);
+
+	const internalTransferSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		dailyTransferLimit: z
 			.string()
@@ -45,107 +49,152 @@ export default function InternalTransfers() {
 
 	const methods = useForm({
 		defaultValues,
-		resolver: zodResolver(internalTransferScheme),
+		resolver: zodResolver(internalTransferSchema),
+		mode: 'onChange',
 	});
 
-	const { handleSubmit } = methods;
+	const { handleSubmit, control, trigger } = methods;
 
-	const onSubmit = async (data: z.infer<typeof internalTransferScheme>) => {
+	const nextStep = async () => {
+		const fields = {
+			1: ['sourceAccount'],
+			2: ['dailyTransferLimit', 'destinationAccount'],
+			3: ['amount'],
+		}[step];
+
+		const isValid = await trigger(fields as any);
+
+		if (isValid) {
+			setStep((prev) => Math.min(prev + 1, 3));
+		}
+	};
+
+	const previousStep = () => {
+		setStep((prev) => Math.max(prev - 1, 1));
+	};
+
+	const onSubmit = async (data: z.infer<typeof internalTransferSchema>) => {
 		console.log(data);
 	};
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='font-semibold text-2xl'>Internal Transfers</h2>
+			<h2 className='text-2xl font-bold'>Internal Transfers</h2>
+
+			<div className='w-full text-center mb-4'>
+				<h3 className='text-lg'>Step {step} of 3</h3>
+				<p className='text-gray-600'>
+					{step === 1 && 'Select your source account'}
+					{step === 2 && 'Enter daily transfer limit and destination account'}
+					{step === 3 && 'Enter transfer amount'}
+				</p>
+			</div>
 
 			<Form {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
+					className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
 				>
-					<FormField
-						control={methods.control}
-						name='sourceAccount'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Source Account</FormLabel>
-								<FormControl>
-									<Select
-										value={field.value}
-										onValueChange={(value) => field.onChange(value)}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='Select your source account' />
-										</SelectTrigger>
+					{step === 1 && (
+						<FormField
+							control={control}
+							name='sourceAccount'
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Source Account</FormLabel>
+									<FormControl>
+										<Select onValueChange={field.onChange} value={field.value}>
+											<SelectTrigger>
+												<SelectValue placeholder='Select Source Account' />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value='account1'>Account 1</SelectItem>
+												<SelectItem value='account2'>Account 2</SelectItem>
+												<SelectItem value='account3'>Account 3</SelectItem>
+											</SelectContent>
+										</Select>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					)}
 
-										<SelectContent>
-											<SelectItem value='account1'>Account 1</SelectItem>
-											<SelectItem value='account2'>Account 2</SelectItem>
-											<SelectItem value='account3'>Account 3</SelectItem>
-										</SelectContent>
-									</Select>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
+					{step === 2 && (
+						<>
+							<FormField
+								control={control}
+								name='dailyTransferLimit'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Daily Transfer Limit</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your daily transfer limit'
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={control}
+								name='destinationAccount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Destination Account</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your destination account'
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
+					)}
+
+					{step === 3 && (
+						<FormField
+							control={control}
+							name='amount'
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Amount</FormLabel>
+									<FormControl>
+										<Input {...field} placeholder='Enter your amount' />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					)}
+
+					<Separator className='my-4' />
+
+					<div className='flex justify-between'>
+						{step > 1 && (
+							<Button type='button' onClick={previousStep} variant='outline'>
+								Back
+							</Button>
 						)}
-					/>
 
-					<FormField
-						control={methods.control}
-						name='dailyTransferLimit'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Daily Transfer Limit</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your daily transfer limit'
-										required
-									/>
-								</FormControl>
-
-								<FormMessage />
-							</FormItem>
+						{step < 3 && (
+							<Button type='button' className='ml-auto' onClick={nextStep}>
+								Next
+							</Button>
 						)}
-					/>
 
-					<FormField
-						control={methods.control}
-						name='destinationAccount'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Destination Account</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder='Enter your destination account'
-										required
-									/>
-								</FormControl>
-
-								<FormMessage />
-							</FormItem>
+						{step === 3 && (
+							<Button type='submit' className='ml-auto'>
+								Transfer
+							</Button>
 						)}
-					/>
-
-					<FormField
-						control={methods.control}
-						name='amount'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Amount</FormLabel>
-								<FormControl>
-									<Input {...field} placeholder='Enter your amount' required />
-								</FormControl>
-
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<Button className='w-full font-semibold mt-3' type='submit'>
-						Transfer
-					</Button>
+					</div>
 				</form>
 			</Form>
 		</main>

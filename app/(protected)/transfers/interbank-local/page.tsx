@@ -2,304 +2,255 @@
 
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { z } from 'zod';
+
+// query
+import { useMutation } from '@tanstack/react-query';
 
 // components
 import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
 } from '@/components/ui/form';
-
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from '@/components/ui/select';
 
+// services
+import { postTransferInternal } from '@/services/api';
+
 export default function InterBankLocalTransfers() {
-  // State to track current step
-  const [step, setStep] = useState(1);
+	const [step, setStep] = useState(1);
 
-  // Schema for the form
-  const thirdPartyTransfersSchema = z.object({
-    sourceAccount: z.string().min(1, 'Please select your source account'),
-    destinationBank: z.string().min(1, 'Please select your destination bank'),
-    beneficiaryAccount: z.string().min(1, 'Please enter beneficiary account'),
-    beneficiaryName: z.string().min(1, 'Please enter beneficiary name'),
-    transferAmount: z.string().min(1, 'Please enter transfer amount'),
-    transferCode: z.string().min(1, 'Please enter transfer code'),
-  });
+	const thirdPartyTransfersSchema = z.object({
+		sourceAccount: z.string().min(1, 'Please select your source account'),
+		destinationBank: z.string().min(1, 'Please select your destination bank'),
+		beneficiaryAccount: z.string().min(1, 'Please enter beneficiary account'),
+		beneficiaryName: z.string().min(1, 'Please enter beneficiary name'),
+		transferAmount: z.string().min(1, 'Please enter transfer amount'),
+		transferCode: z.string().min(1, 'Please enter transfer code'),
+	});
 
-  const defaultValues = {
-    sourceAccount: '',
-    destinationBank: '',
-    beneficiaryAccount: '',
-    beneficiaryName: '',
-    transferAmount: '',
-    transferCode: '',
-  };
+	const defaultValues = {
+		sourceAccount: '',
+		destinationBank: '',
+		beneficiaryAccount: '',
+		beneficiaryName: '',
+		transferAmount: '',
+		transferCode: '',
+	};
 
-  const methods = useForm({
-    defaultValues,
-    resolver: zodResolver(thirdPartyTransfersSchema),
-  });
+	const transferMutation = useMutation({
+		mutationFn: postTransferInternal,
+		onSuccess: (res: any) => {
+			console.log(res);
+		},
+	});
 
-  const { handleSubmit, control, setValue, trigger } = methods;
+	const methods = useForm({
+		defaultValues,
+		resolver: zodResolver(thirdPartyTransfersSchema),
+		mode: 'onChange',
+	});
 
-  const onSubmit = async (data) => {
-    console.log(data);
-  };
+	const { handleSubmit, control, trigger } = methods;
 
-  const nextStep = () => {
-    setStep((prev) => Math.min(prev + 1, 3)); // Step should not exceed 3
-  };
+	const nextStep = async () => {
+		const fields = {
+			1: ['sourceAccount'],
+			2: ['destinationBank', 'beneficiaryAccount', 'beneficiaryName'],
+			3: ['transferAmount', 'transferCode'],
+		}[step];
 
-  const previousStep = () => {
-    setStep((prev) => Math.max(prev - 1, 1)); // Step should not go below 1
-  };
+		const isValid = await trigger(fields as any);
 
-  // Watching the fields to move to the next step automatically
-  const sourceAccount = useWatch({
-    control,
-    name: 'sourceAccount',
-  });
+		if (isValid) {
+			setStep((prev) => Math.min(prev + 1, 3));
+		}
+	};
 
-  const destinationBank = useWatch({
-    control,
-    name: 'destinationBank',
-  });
+	const previousStep = () => {
+		setStep((prev) => Math.max(prev - 1, 1));
+	};
 
-  const beneficiaryAccount = useWatch({
-    control,
-    name: 'beneficiaryAccount',
-  });
+	const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
+		console.log(data);
 
-  const beneficiaryName = useWatch({
-    control,
-    name: 'beneficiaryName',
-  });
+		transferMutation.mutate(data);
+	};
 
-  const transferAmount = useWatch({
-    control,
-    name: 'transferAmount',
-  });
+	return (
+		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
+			<h2 className='text-2xl font-bold'>
+				Third Party Transfers (Other Banks)
+			</h2>
 
-  const transferCode = useWatch({
-    control,
-    name: 'transferCode',
-  });
+			<div className='w-full text-center mb-4'>
+				<h3 className='text-lg'>Step {step} of 3</h3>
+				<p className='text-gray-600'>
+					{step === 1 && 'Select your source account'}
+					{step === 2 && 'Select destination bank and beneficiary details'}
+					{step === 3 && 'Enter transfer amount and details'}
+				</p>
+			</div>
 
-  // Automatically move to the next step if input is valid for the current step
-  useEffect(() => {
-    if (step === 1 && sourceAccount) {
-      trigger('sourceAccount').then((valid) => {
-        if (valid) nextStep();
-      });
-    }
-    if (step === 2 && destinationBank && beneficiaryAccount && beneficiaryName) {
-      trigger(['destinationBank', 'beneficiaryAccount', 'beneficiaryName']).then((valid) => {
-        if (valid) nextStep();
-      });
-    }
-    if (step === 3 && transferAmount && transferCode) {
-      trigger(['transferAmount', 'transferCode']);
-    }
-  }, [sourceAccount, destinationBank, beneficiaryAccount, beneficiaryName, transferAmount, transferCode, step, trigger]);
+			<Form {...methods}>
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
+				>
+					{step === 1 && (
+						<FormField
+							control={control}
+							name='sourceAccount'
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Source Account</FormLabel>
+									<FormControl>
+										<Select onValueChange={field.onChange} value={field.value}>
+											<SelectTrigger>
+												<SelectValue placeholder='Select Source Account' />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value='account1'>Account 1</SelectItem>
+												<SelectItem value='account2'>Account 2</SelectItem>
+											</SelectContent>
+										</Select>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					)}
 
-  return (
-    <main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-      <h2 className='text-2xl font-bold'>Third Party Transfers (Other Banks)</h2>
+					{step === 2 && (
+						<>
+							<FormField
+								control={control}
+								name='destinationBank'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Destination Bank</FormLabel>
+										<FormControl>
+											<Select
+												onValueChange={field.onChange}
+												value={field.value}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Destination Bank' />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value='bank1'>Bank 1</SelectItem>
+													<SelectItem value='bank2'>Bank 2</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 
-      {/* Header showing current step */}
-      <div className='w-full text-center mb-4'>
-        <h3 className='text-lg'>
-          Step {step} of 3
-        </h3>
-        <p className='text-gray-600'>
-          {step === 1 && 'Select your source account'}
-          {step === 2 && 'Select destination bank and beneficiary details'}
-          {step === 3 && 'Enter transfer amount and details'}
-        </p>
-      </div>
+							<FormField
+								control={control}
+								name='beneficiaryAccount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Beneficiary Account</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter Beneficiary Account'
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 
-      <Form {...methods}>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
-        >
-          {/* Step 1: Select Source Account */}
-          {step === 1 && (
-            <>
-              <FormField
-                control={methods.control}
-                name='sourceAccount'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Account</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setValue('sourceAccount', value); // Ensure value is set in form state
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder='Select Source Account' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='account1'>Account 1</SelectItem>
-                          <SelectItem value='account2'>Account 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
+							<FormField
+								control={control}
+								name='beneficiaryName'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Beneficiary Name</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter Beneficiary Name' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
+					)}
 
-          {/* Step 2: Select Destination Bank and Beneficiary */}
-          {step === 2 && (
-            <>
-              <FormField
-                control={methods.control}
-                name='destinationBank'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Destination Bank</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setValue('destinationBank', value);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder='Select Destination Bank' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='bank1'>Bank 1</SelectItem>
-                          <SelectItem value='bank2'>Bank 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+					{step === 3 && (
+						<>
+							<FormField
+								control={control}
+								name='transferAmount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Transfer Amount</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter Transfer Amount' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 
-			    <FormField
-                control={methods.control}
-                name='beneficiaryAccount'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Beneficiary Account</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder='Enter Beneficiary Account'
-                        required
-                        onBlur={() => trigger('beneficiaryAccount')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-						  
-              <FormField
-                control={methods.control}
-                name='beneficiaryName'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Beneficiary Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder='Enter Beneficiary Name'
-                        required
-                        onBlur={() => trigger('beneficiaryName')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+							<FormField
+								control={control}
+								name='transferCode'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Transfer Code</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter Transfer Code' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
+					)}
 
-            </>
-          )}
+					<Separator className='my-4' />
 
-          {/* Step 3: Transfer Amount and Details */}
-          {step === 3 && (
-            <>
-              <FormField
-                control={methods.control}
-                name='transferAmount'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Transfer Amount</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder='Enter Transfer Amount' required />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+					<div className='flex justify-between'>
+						{step > 1 && (
+							<Button type='button' onClick={previousStep} variant='outline'>
+								Back
+							</Button>
+						)}
 
-              <FormField
-                control={methods.control}
-                name='transferCode'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Transfer Code</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder='Enter Transfer Code' required />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
+						{step < 3 && (
+							<Button type='button' className='ml-auto' onClick={nextStep}>
+								Next
+							</Button>
+						)}
 
-          <Separator className='my-4' />
-
-          {/* Navigation Buttons */}
-          <div className='flex justify-between'>
-            {step > 1 && (
-              <Button type='button' onClick={previousStep} variant='outline'>
-                Back
-              </Button>
-            )}
-
-            {step < 3 && (
-              <Button type='button' className='ml-auto' onClick={nextStep}>
-                Next
-              </Button>
-            )}
-
-            {step === 3 && (
-              <Button type='submit' className='ml-auto'>
-                Submit
-              </Button>
-            )}
-          </div>
-        </form>
-      </Form>
-    </main>
-  );
+						{step === 3 && (
+							<Button type='submit' className='ml-auto'>
+								Submit
+							</Button>
+						)}
+					</div>
+				</form>
+			</Form>
+		</main>
+	);
 }
