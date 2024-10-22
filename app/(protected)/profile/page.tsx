@@ -1,10 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { Button } from '@/components/ui/button';
 import {
 	Form,
 	FormControl,
@@ -13,9 +14,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 
 export default function Profile() {
 	const [step, setStep] = useState(1);
@@ -175,8 +174,6 @@ export default function Profile() {
 							/>
 						</>
 					)}
-
-					<Separator className='my-4' />
 
 					<div className='flex justify-between'>
 						{step > 1 && (

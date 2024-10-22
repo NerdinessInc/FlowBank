@@ -60,6 +60,7 @@ export default function Dashboard() {
 			(account: { accountNumber: string }) =>
 				account.accountNumber === accountNumber
 		);
+
 		setSelectedAccount(selected);
 	};
 

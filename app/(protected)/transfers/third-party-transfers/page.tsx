@@ -2,8 +2,8 @@
 
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // components
@@ -17,7 +17,6 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import {
 	Select,
 	SelectContent,
@@ -293,8 +292,6 @@ export default function ThirdPartyTransfers() {
 							</div>
 						</>
 					)}
-
-					<Separator className='my-4' />
 
 					<div className='flex justify-between'>
 						{step > 1 && (
