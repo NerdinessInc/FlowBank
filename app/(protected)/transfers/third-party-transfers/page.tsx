@@ -6,8 +6,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// query
+import { useQuery } from '@tanstack/react-query';
+
 // components
+import { Loading } from '@/components/Loader';
+
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+// import { Label } from '@/components/ui/label';
+
 import {
 	Form,
 	FormControl,
@@ -16,7 +24,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+
 import {
 	Select,
 	SelectContent,
@@ -24,10 +32,31 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@radix-ui/react-label';
+
+// store
+import { appStore } from '@/store';
+
+// utils
+import { formatCurrency } from '@/utils/formatNumber';
+
+// services
+import { ReturnAcctDetails2 } from '@/services/api';
 
 export default function ThirdPartyTransfers() {
+	const { userData } = appStore();
+
 	const [step, setStep] = useState(1);
+
+	const { data, isLoading } = useQuery({
+		queryKey: ['internal-transfers'],
+		queryFn: () =>
+			ReturnAcctDetails2(
+				2,
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
 
 	const thirdPartyTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
@@ -40,6 +69,7 @@ export default function ThirdPartyTransfers() {
 			.min(1, 'Please enter your destination account'),
 		transferAmount: z.string().min(1, 'Please enter your transfer amount'),
 		transferCode: z.string().min(1, 'Please enter your transfer code'),
+		otp: z.string().min(1, 'Please enter your OTP'),
 	});
 
 	const defaultValues = {
@@ -49,6 +79,7 @@ export default function ThirdPartyTransfers() {
 		destinationAccount: '',
 		transferAmount: '',
 		transferCode: '',
+		otp: '',
 	};
 
 	const methods = useForm({
@@ -69,7 +100,7 @@ export default function ThirdPartyTransfers() {
 		const isValid = await trigger(fields as any);
 
 		if (isValid) {
-			setStep((prev) => Math.min(prev + 1, 3));
+			setStep((prev) => Math.min(prev + 1, 4));
 		}
 	};
 
@@ -78,20 +109,23 @@ export default function ThirdPartyTransfers() {
 	};
 
 	const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
-		console.log(data);
+		console.log('Processing transfer:', data);
 	};
+
+	if (isLoading) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
 			<h2 className='text-2xl font-bold'>Third Party Transfers</h2>
 
 			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 3</h3>
+				<h3 className='text-lg'>Step {step} of 4</h3>
 				<p className='text-gray-600'>
 					{step === 1 &&
 						'Select your source account and enter daily transfer limit'}
 					{step === 2 && 'Enter beneficiary and destination account'}
 					{step === 3 && 'Enter transfer amount and code'}
+					{step === 4 && 'Confirm transfer details'}
 				</p>
 			</div>
 
@@ -114,12 +148,18 @@ export default function ThirdPartyTransfers() {
 												value={field.value}
 											>
 												<SelectTrigger>
-													<SelectValue placeholder='Select your source account' />
+													<SelectValue placeholder='Select Source Account' />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value='account1'>Account 1</SelectItem>
-													<SelectItem value='account2'>Account 2</SelectItem>
-													<SelectItem value='account3'>Account 3</SelectItem>
+													{data?.data?.map((account: any, index: number) => (
+														<SelectItem
+															key={index}
+															value={account.accountNumber}
+														>
+															{account.accountNumber} -{' '}
+															{formatCurrency(account.bookBalance)}
+														</SelectItem>
+													))}
 												</SelectContent>
 											</Select>
 										</FormControl>
@@ -221,7 +261,6 @@ export default function ThirdPartyTransfers() {
 
 							<div className='grid grid-cols-3 gap-3'>
 								<div className='col-span-1'>
-									<Label>Numbers</Label>
 									<Select
 										onValueChange={(newValue) => {
 											const currentValue = getValues('transferCode');
@@ -243,7 +282,6 @@ export default function ThirdPartyTransfers() {
 								</div>
 
 								<div className='col-span-1'>
-									<Label>Big Letters</Label>
 									<Select
 										onValueChange={(newValue) => {
 											const currentValue = getValues('transferCode');
@@ -267,7 +305,6 @@ export default function ThirdPartyTransfers() {
 								</div>
 
 								<div className='col-span-1'>
-									<Label>Small Letters</Label>
 									<Select
 										onValueChange={(newValue) => {
 											const currentValue = getValues('transferCode');
@@ -293,23 +330,59 @@ export default function ThirdPartyTransfers() {
 						</>
 					)}
 
+					{step === 4 && (
+						<div className='text-center'>
+							<p className='mb-4'>
+								You are about to transfer{' '}
+								{formatCurrency(getValues('transferAmount'))} from your account{' '}
+								{getValues('sourceAccount')} to{' '}
+								{getValues('destinationAccount')}, {getValues('beneficiary')}.
+							</p>
+							<p className='font-bold mb-4'>Do you want to proceed?</p>
+
+							<FormField
+								control={control}
+								name='otp'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>OTP</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter your OTP' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+					)}
+
 					<div className='flex justify-between'>
 						{step > 1 && (
-							<Button type='button' onClick={previousStep} variant='outline'>
+							<Button
+								type='button'
+								onClick={previousStep}
+								variant='outline'
+								className='mr-2'
+							>
 								Back
 							</Button>
 						)}
 
-						{step < 3 && (
+						{step < 4 && (
 							<Button type='button' className='ml-auto' onClick={nextStep}>
 								Next
 							</Button>
 						)}
 
-						{step === 3 && (
-							<Button type='submit' className='ml-auto'>
-								Submit
-							</Button>
+						{step === 4 && (
+							<>
+								<Button type='button' onClick={previousStep} variant='outline'>
+									Cancel
+								</Button>
+								<Button type='submit' className='ml-auto'>
+									Confirm Transfer
+								</Button>
+							</>
 						)}
 					</div>
 				</form>

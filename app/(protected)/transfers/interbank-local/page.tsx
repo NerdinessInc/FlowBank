@@ -7,10 +7,14 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // query
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 // components
+import { Loading } from '@/components/Loader';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
 import {
 	Form,
 	FormControl,
@@ -19,7 +23,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+
 import {
 	Select,
 	SelectContent,
@@ -28,19 +32,39 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
+// store
+import { appStore } from '@/store';
+
+// utils
+import { formatCurrency } from '@/utils/formatNumber';
+
 // services
-import { postTransferInternal } from '@/services/api';
+import { postTransferInternal, ReturnAcctDetails2 } from '@/services/api';
 
 export default function InterBankLocalTransfers() {
+	const { userData } = appStore();
+
 	const [step, setStep] = useState(1);
 
-	const thirdPartyTransfersSchema = z.object({
+	const { data, isLoading } = useQuery({
+		queryKey: ['internal-transfers'],
+		queryFn: () =>
+			ReturnAcctDetails2(
+				2,
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
+
+	const interbankLocalTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		destinationBank: z.string().min(1, 'Please select your destination bank'),
 		beneficiaryAccount: z.string().min(1, 'Please enter beneficiary account'),
 		beneficiaryName: z.string().min(1, 'Please enter beneficiary name'),
 		transferAmount: z.string().min(1, 'Please enter transfer amount'),
 		transferCode: z.string().min(1, 'Please enter transfer code'),
+		otp: z.string().min(1, 'Please enter your OTP'),
 	});
 
 	const defaultValues = {
@@ -50,6 +74,7 @@ export default function InterBankLocalTransfers() {
 		beneficiaryName: '',
 		transferAmount: '',
 		transferCode: '',
+		otp: '',
 	};
 
 	const transferMutation = useMutation({
@@ -61,11 +86,11 @@ export default function InterBankLocalTransfers() {
 
 	const methods = useForm({
 		defaultValues,
-		resolver: zodResolver(thirdPartyTransfersSchema),
+		resolver: zodResolver(interbankLocalTransfersSchema),
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger } = methods;
+	const { handleSubmit, control, trigger, getValues } = methods;
 
 	const nextStep = async () => {
 		const fields = {
@@ -77,7 +102,7 @@ export default function InterBankLocalTransfers() {
 		const isValid = await trigger(fields as any);
 
 		if (isValid) {
-			setStep((prev) => Math.min(prev + 1, 3));
+			setStep((prev) => Math.min(prev + 1, 4));
 		}
 	};
 
@@ -85,11 +110,14 @@ export default function InterBankLocalTransfers() {
 		setStep((prev) => Math.max(prev - 1, 1));
 	};
 
-	const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
-		console.log(data);
-
+	const onSubmit = async (
+		data: z.infer<typeof interbankLocalTransfersSchema>
+	) => {
+		console.log('Processing transfer:', data);
 		transferMutation.mutate(data);
 	};
+
+	if (isLoading) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
@@ -98,11 +126,12 @@ export default function InterBankLocalTransfers() {
 			</h2>
 
 			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 3</h3>
+				<h3 className='text-lg'>Step {step} of 4</h3>
 				<p className='text-gray-600'>
 					{step === 1 && 'Select your source account'}
 					{step === 2 && 'Select destination bank and beneficiary details'}
 					{step === 3 && 'Enter transfer amount and details'}
+					{step === 4 && 'Confirm transfer details'}
 				</p>
 			</div>
 
@@ -124,8 +153,12 @@ export default function InterBankLocalTransfers() {
 												<SelectValue placeholder='Select Source Account' />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value='account1'>Account 1</SelectItem>
-												<SelectItem value='account2'>Account 2</SelectItem>
+												{data?.data?.map((account: any, index: number) => (
+													<SelectItem key={index} value={account.accountNumber}>
+														{account.accountNumber} -{' '}
+														{formatCurrency(account.bookBalance)}
+													</SelectItem>
+												))}
 											</SelectContent>
 										</Select>
 									</FormControl>
@@ -227,23 +260,61 @@ export default function InterBankLocalTransfers() {
 						</>
 					)}
 
+					{step === 4 && (
+						<div className='text-center'>
+							<p className='mb-4'>
+								You are about to transfer{' '}
+								{formatCurrency(getValues('transferAmount'))} from your account{' '}
+								{getValues('sourceAccount')} to{' '}
+								{getValues('beneficiaryAccount')},{' '}
+								{getValues('beneficiaryName')} at {getValues('destinationBank')}
+								.
+							</p>
+							<p className='font-bold mb-4'>Do you want to proceed?</p>
+
+							<FormField
+								control={control}
+								name='otp'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>OTP</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter your OTP' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+					)}
+
 					<div className='flex justify-between'>
 						{step > 1 && (
-							<Button type='button' onClick={previousStep} variant='outline'>
+							<Button
+								type='button'
+								onClick={previousStep}
+								variant='outline'
+								className='mr-2'
+							>
 								Back
 							</Button>
 						)}
 
-						{step < 3 && (
+						{step < 4 && (
 							<Button type='button' className='ml-auto' onClick={nextStep}>
 								Next
 							</Button>
 						)}
 
-						{step === 3 && (
-							<Button type='submit' className='ml-auto'>
-								Submit
-							</Button>
+						{step === 4 && (
+							<>
+								<Button type='button' onClick={previousStep} variant='outline'>
+									Cancel
+								</Button>
+								<Button type='submit' className='ml-auto'>
+									Confirm Transfer
+								</Button>
+							</>
 						)}
 					</div>
 				</form>

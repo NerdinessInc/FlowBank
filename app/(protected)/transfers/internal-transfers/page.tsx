@@ -6,8 +6,15 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// query
+import { useQuery } from '@tanstack/react-query';
+
 // components
+import { Loading } from '@/components/Loader';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
 import {
 	Form,
 	FormControl,
@@ -16,7 +23,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+
 import {
 	Select,
 	SelectContent,
@@ -25,8 +32,30 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
+// store
+import { appStore } from '@/store';
+
+// utils
+import { formatCurrency } from '@/utils/formatNumber';
+
+// services
+import { ReturnAcctDetails2 } from '@/services/api';
+
 export default function InternalTransfers() {
+	const { userData } = appStore();
+
 	const [step, setStep] = useState(1);
+
+	const { data, isLoading } = useQuery({
+		queryKey: ['internal-transfers'],
+		queryFn: () =>
+			ReturnAcctDetails2(
+				2,
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
 
 	const internalTransferSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
@@ -37,6 +66,7 @@ export default function InternalTransfers() {
 			.string()
 			.min(1, 'Please enter your destination account'),
 		amount: z.string().min(1, 'Please enter your amount'),
+		otp: z.string().min(1, 'Please enter your oTP'),
 	});
 
 	const defaultValues = {
@@ -44,6 +74,7 @@ export default function InternalTransfers() {
 		dailyTransferLimit: '',
 		destinationAccount: '',
 		amount: '',
+		otp: '',
 	};
 
 	const methods = useForm({
@@ -52,7 +83,7 @@ export default function InternalTransfers() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger } = methods;
+	const { handleSubmit, control, trigger, getValues } = methods;
 
 	const nextStep = async () => {
 		const fields = {
@@ -64,7 +95,7 @@ export default function InternalTransfers() {
 		const isValid = await trigger(fields as any);
 
 		if (isValid) {
-			setStep((prev) => Math.min(prev + 1, 3));
+			setStep((prev) => Math.min(prev + 1, 4));
 		}
 	};
 
@@ -76,16 +107,19 @@ export default function InternalTransfers() {
 		console.log(data);
 	};
 
+	if (isLoading) return <Loading />;
+
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
 			<h2 className='text-2xl font-bold'>Internal Transfers</h2>
 
 			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 3</h3>
+				<h3 className='text-lg'>Step {step} of 4</h3>
 				<p className='text-gray-600'>
 					{step === 1 && 'Select your source account'}
 					{step === 2 && 'Enter daily transfer limit and destination account'}
 					{step === 3 && 'Enter transfer amount'}
+					{step === 4 && 'Confirm transfer details'}
 				</p>
 			</div>
 
@@ -107,9 +141,12 @@ export default function InternalTransfers() {
 												<SelectValue placeholder='Select Source Account' />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value='account1'>Account 1</SelectItem>
-												<SelectItem value='account2'>Account 2</SelectItem>
-												<SelectItem value='account3'>Account 3</SelectItem>
+												{data?.data?.map((account: any, index: number) => (
+													<SelectItem key={index} value={account.accountNumber}>
+														{account.accountNumber} -{' '}
+														{formatCurrency(account.bookBalance)}
+													</SelectItem>
+												))}
 											</SelectContent>
 										</Select>
 									</FormControl>
@@ -173,23 +210,60 @@ export default function InternalTransfers() {
 						/>
 					)}
 
+					{step === 4 && (
+						<div className='text-center'>
+							<p className='mb-4'>
+								You are about to transfer {formatCurrency(getValues('amount'))}{' '}
+								from your account {getValues('sourceAccount')} to{' '}
+								{getValues('destinationAccount')}.
+							</p>
+
+							<p className='font-bold mb-4'>Do you want to proceed?</p>
+
+							<FormField
+								control={control}
+								name='otp'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>OTP</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter your oTP' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+					)}
+
 					<div className='flex justify-between'>
 						{step > 1 && (
-							<Button type='button' onClick={previousStep} variant='outline'>
+							<Button
+								type='button'
+								onClick={previousStep}
+								variant='outline'
+								className='mr-2'
+							>
 								Back
 							</Button>
 						)}
 
-						{step < 3 && (
+						{step < 4 && (
 							<Button type='button' className='ml-auto' onClick={nextStep}>
 								Next
 							</Button>
 						)}
 
-						{step === 3 && (
-							<Button type='submit' className='ml-auto'>
-								Transfer
-							</Button>
+						{step === 4 && (
+							<>
+								<Button type='button' onClick={previousStep} variant='outline'>
+									Cancel
+								</Button>
+
+								<Button type='submit' className='ml-auto'>
+									Confirm Transfer
+								</Button>
+							</>
 						)}
 					</div>
 				</form>

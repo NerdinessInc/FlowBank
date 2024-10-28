@@ -90,7 +90,6 @@ export const ReturnAcctDetails2 = async (
 		.trim()
 		.replace(/\s+/g, ' ');
 
-	console.log(AcctDetail2Body);
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		AcctDetail2Body
@@ -99,7 +98,7 @@ export const ReturnAcctDetails2 = async (
 	try {
 		const result = data['ReturnAcctDetails2Result'];
 		const responseString = result.rs.string;
-		console.log(responseString);
+
 		const parsedAccountDetails = responseString
 			.slice(1)
 			.map((accountString: string) => {
@@ -122,8 +121,7 @@ export const ReturnAcctDetails2 = async (
 					type,
 				};
 			});
-		console.log('ReturnAcctDetails2Result');
-		console.log(parsedAccountDetails);
+
 		return { success: true, data: parsedAccountDetails };
 	} catch (error) {
 		return {
@@ -212,8 +210,6 @@ export const changePassword = async (values: any) => {
 			changePasswordBody
 		);
 
-		console.log(data);
-
 		const result = data['ReturnChangePassResult'];
 
 		return {
@@ -271,7 +267,6 @@ export const returnSaveBenefInfo = async (userRec: any, values: any) => {
 		.trim()
 		.replace(/\s+/g, ' ');
 
-	console.log(SaveBenefInfoBody);
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		SaveBenefInfoBody
@@ -321,7 +316,6 @@ export const ReturngetOTUP = async (userRec: any, values: any) => {
 		.trim()
 		.replace(/\s+/g, ' ');
 
-	console.log(SaveBenefInfoBody);
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		SaveBenefInfoBody

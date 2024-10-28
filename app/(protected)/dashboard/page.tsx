@@ -2,12 +2,16 @@
 
 import Autoplay from 'embla-carousel-autoplay';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
+// query
+import { useQuery } from '@tanstack/react-query';
+
+// icons
 import { ActivitySquare, Banknote, CreditCard } from 'lucide-react';
 
-// services
-import { ReturnAcctDetails2 } from '@/services/api';
-
 // components
+import { Loading } from '@/components/Loader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Carousel,
@@ -22,41 +26,39 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
-import { Loading } from '@/components/Loader';
 
 // store
 import { appStore } from '@/store';
-import { useEffect, useState } from 'react';
+
+// services
+import { ReturnAcctDetails2 } from '@/services/api';
 
 export default function Dashboard() {
 	const { userData, appData } = appStore();
-	const [accountDetails, setAccountDetails] = useState<any[]>([]); // Initialize as an array
+
+	// const [accountDetails, setAccountDetails] = useState<any[]>([]); // Initialize as an array
 	const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
 
-	useEffect(() => {
-		if (userData?.acctCollection?.AcctStruct) {
+	const { data, isLoading } = useQuery({
+		queryKey: ['account-details'],
+		queryFn: () =>
 			ReturnAcctDetails2(
 				2,
-				userData.userRec,
-				userData.acctCollection.AcctStruct
-			)
-				.then((res: any) => {
-					if (res.success) {
-						setAccountDetails(res.data || []); // Ensure the data is an array
-						setSelectedAccount(res.data[0] || null); // Set the first account as selected by default
-					} else {
-						console.error('Failed to fetch account details:', res.errorMessage);
-					}
-				})
-				.catch((error) => {
-					console.error('Error in API call:', error);
-				});
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
+
+	useEffect(() => {
+		if (data?.data) {
+			setSelectedAccount(data?.data[0] || null);
 		}
-	}, [userData?.userRec, userData?.acctCollection?.AcctStruct]);
+	}, [data]);
 
 	// Function to select a row based on the supplied account number
 	const selectAccountByNumber = (accountNumber: string) => {
-		const selected = accountDetails.find(
+		const selected = data?.data?.find(
 			(account: { accountNumber: string }) =>
 				account.accountNumber === accountNumber
 		);
@@ -73,7 +75,7 @@ export default function Dashboard() {
 		'https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
 	];
 
-	if (!userData) return <Loading />;
+	if (!userData || isLoading) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6'>
@@ -144,7 +146,7 @@ export default function Dashboard() {
 							</TableHeader>
 
 							<TableBody>
-								{accountDetails.map((account, index) => (
+								{data?.data?.map((account: any, index: number) => (
 									<TableRow
 										key={index}
 										onClick={() => selectAccountByNumber(account.accountNumber)}
@@ -174,7 +176,7 @@ export default function Dashboard() {
 				]}
 			>
 				<CarouselContent>
-					{advertImages.map((image, index) => (
+					{advertImages?.map((image, index) => (
 						<CarouselItem className='relative w-full h-[300px]' key={index}>
 							<div className='w-full h-full'>
 								<Image
