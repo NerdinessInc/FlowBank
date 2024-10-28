@@ -230,36 +230,127 @@ export const changePassword = async (values: any) => {
 	}
 };
 
-export const getBeneficiaryInfo = async (values: any) => {
-	const getBenefInfoBody = `
-    <returnGetBenefInfo xmlns="http://con.Ibplc.org/">
-      <pUsername>${values.username}</pUsername>
-      <pAccountnumber>${values.accountNumber}</pAccountnumber>
-      <pCustomerid>${values.customerId}</pCustomerid>
-      <pAccountnameNew>${values.accountNameNew}</pAccountnameNew>
-      <pAcctCurrency>${values.accountCurrency}</pAcctCurrency>
+export const returnGetBenefInfo = async (userRec: any) => {
+	const BenefInfoBody = `
+	<returnGetBenefInfo xmlns="http://con.Ibplc.org/">
+      <pUsername>${userRec.pUserName}</pUsername>
+      <pAccountnumber>''</pAccountnumber>
+      <pCustomerid>${userRec.PXfChar2}</pCustomerid>
+      <pAccountnameNew>''</pAccountnameNew>
+      <pAcctCurrency>''</pAcctCurrency>
     </returnGetBenefInfo>`
 		.trim()
 		.replace(/\s+/g, ' ');
 
+	console.log(BenefInfoBody);
+	const { data } = await soapRequest(
+		'/NibssService/NibssAppService.asmx',
+		BenefInfoBody
+	);
+
 	try {
-		const { data } = await soapRequest(
-			'/NibssService/NibssAppService.asmx',
-			getBenefInfoBody
-		);
-
 		const result = data['returnGetBenefInfoResult'];
-
-		// You may need to adjust this part based on the actual response structure
+		const responseString = result.rs;
+		console.log(responseString);
+		const parsedBeneInfo = responseString
+			.slice(1)
+			.map((beneficiaryString: string) => {
+				const [BenefAccount, BenefName, BenefCurrency] =
+					beneficiaryString.split('|');
+				return {
+					BenefAccount,
+					BenefName,
+					BenefCurrency,
+				};
+			});
+		return { success: true, data: parsedBeneInfo };
+	} catch (error) {
 		return {
-			success: result.bool,
-			data: result,
+			success: false,
+			errorMessage: 'Something went wrong!',
+		};
+	}
+};
+
+export const returnSaveBenefInfo = async (userRec: any, values: any) => {
+	const SaveBenefInfoBody = `
+	<returnSaveBenefInfo xmlns="http://con.Ibplc.org/">
+      <pUsername>${userRec.pUserName}</pUsername>
+      <pAccountnumber>${values.accountNumber}</pAccountnumber>
+      <pCustomerid>${userRec.PXfChar2}</pCustomerid>
+      <pAccountnameNew>${values.accountName}</pAccountnameNew>
+      <pAcctCurrency>${values.currency}</pAcctCurrency>
+    </returnSaveBenefInfo>`
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	console.log(SaveBenefInfoBody);
+	const { data } = await soapRequest(
+		'/NibssService/NibssAppService.asmx',
+		SaveBenefInfoBody
+	);
+
+	try {
+		const result = data['returnSaveBenefInfoResult'];
+		return {
+			success: result['retMsg'],
+			retVal2: result['retVal2'],
+			retVal: result['retVal'],
 		};
 	} catch (error) {
 		return {
 			success: false,
-			errorMessage:
-				'Failed to retrieve beneficiary information. Please try again.',
+			errorMessage: 'Something went wrong!',
+		};
+	}
+};
+
+export const ReturngetOTUP = async (userRec: any, values: any) => {
+	const SaveBenefInfoBody = `
+	<ReturngetOTUP xmlns="http://con.Ibplc.org/">
+      <pUserTrfToken>
+        <pusername>${userRec.pUserName}</pusername>
+        <penqaccess>${userRec.PXfChar2}</penqaccess>
+        <pacesscode>${userRec.pAcessCode}</pacesscode>
+        <ppassword>${userRec.pPassword}</ppassword>
+        <ptrfcode>string</ptrfcode>
+        <pjobtype>string</pjobtype>
+        <pprocesstype>string</pprocesstype>
+        <pjobsubmittedby>${userRec.pFullName}</pjobsubmittedby>
+        <psessionID>string</psessionID>
+        <pemail1>string</pemail1>
+        <pphone1>string</pphone1>
+      </pUserTrfToken>
+      <Sendoption>1</Sendoption>
+    </ReturngetOTUP>
+
+	<returnSaveBenefInfo xmlns="http://con.Ibplc.org/">
+      <pUsername>${userRec.pUserName}</pUsername>
+      <pAccountnumber>${values.accountNumber}</pAccountnumber>
+      <pCustomerid>${userRec.PXfChar2}</pCustomerid>
+      <pAccountnameNew>${values.accountName}</pAccountnameNew>
+      <pAcctCurrency>${values.currency}</pAcctCurrency>
+    </returnSaveBenefInfo>`
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	console.log(SaveBenefInfoBody);
+	const { data } = await soapRequest(
+		'/NibssService/NibssAppService.asmx',
+		SaveBenefInfoBody
+	);
+
+	try {
+		const result = data['returnSaveBenefInfoResult'];
+		return {
+			success: result['retMsg'],
+			retVal2: result['retVal2'],
+			retVal: result['retVal'],
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Something went wrong!',
 		};
 	}
 };
