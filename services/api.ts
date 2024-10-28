@@ -196,3 +196,70 @@ export const postTransferInternal = async (transferData: any) => {
 		};
 	}
 };
+
+export const changePassword = async (values: any) => {
+	const changePasswordBody = `
+    <ReturnChangePass xmlns="http://con.Ibplc.org/">
+      <Uname>${values.username}</Uname>
+      <PacCode>${values.accessCode}</PacCode>
+      <pwd>${values.newPassword}</pwd>
+    </ReturnChangePass>`
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			changePasswordBody
+		);
+
+		console.log(data);
+
+		const result = data['ReturnChangePassResult'];
+
+		// You may need to adjust this part based on the actual response structure
+		return {
+			success: result.bool,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Failed to change password. Please try again.',
+		};
+	}
+};
+
+export const getBeneficiaryInfo = async (values: any) => {
+	const getBenefInfoBody = `
+    <returnGetBenefInfo xmlns="http://con.Ibplc.org/">
+      <pUsername>${values.username}</pUsername>
+      <pAccountnumber>${values.accountNumber}</pAccountnumber>
+      <pCustomerid>${values.customerId}</pCustomerid>
+      <pAccountnameNew>${values.accountNameNew}</pAccountnameNew>
+      <pAcctCurrency>${values.accountCurrency}</pAcctCurrency>
+    </returnGetBenefInfo>`
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			getBenefInfoBody
+		);
+
+		const result = data['returnGetBenefInfoResult'];
+
+		// You may need to adjust this part based on the actual response structure
+		return {
+			success: result.bool,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage:
+				'Failed to retrieve beneficiary information. Please try again.',
+		};
+	}
+};

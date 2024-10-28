@@ -1,9 +1,16 @@
 'use client';
 
+// form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+// hooks
+import { useToast } from '@/hooks/use-toast';
+
+// query
+import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -16,20 +23,30 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
+// services
+import { changePassword } from '@/services/api';
+
 export default function Profile() {
+	const { toast } = useToast();
+
 	const [step, setStep] = useState(1);
 
-	const changePasswordSchema = z.object({
-		username: z.string().min(1, 'Please enter your username'),
-		fullName: z.string().min(1, 'Please enter your full name'),
-		oldPassword: z.string().min(1, 'Please enter your old password'),
-		newPassword: z.string().min(1, 'Please enter your new password'),
-		confirmPassword: z.string().min(1, 'Please confirm your new password'),
-	});
+	const changePasswordSchema = z
+		.object({
+			username: z.string().min(1, 'Please enter your username'),
+			accessCode: z.string().min(1, 'Please enter your access code'),
+			oldPassword: z.string().min(1, 'Please enter your old password'),
+			newPassword: z.string().min(1, 'Please enter your new password'),
+			confirmPassword: z.string().min(1, 'Please confirm your new password'),
+		})
+		.refine((data) => data.newPassword === data.confirmPassword, {
+			message: "Passwords don't match",
+			path: ['confirmPassword'],
+		});
 
 	const defaultValues = {
 		username: '',
-		fullName: '',
+		accessCode: '',
 		oldPassword: '',
 		newPassword: '',
 		confirmPassword: '',
@@ -45,7 +62,7 @@ export default function Profile() {
 
 	const nextStep = async () => {
 		const fields = {
-			1: ['username', 'fullName'],
+			1: ['username', 'accessCode'],
 			2: ['oldPassword'],
 			3: ['newPassword', 'confirmPassword'],
 		}[step];
@@ -61,8 +78,36 @@ export default function Profile() {
 		setStep((prev) => Math.max(prev - 1, 1));
 	};
 
+	const { mutate, isPending } = useMutation({
+		mutationFn: (data: {
+			username: string;
+			accessCode: string;
+			newPassword: string;
+		}) => changePassword(data.username, data.accessCode, data.newPassword),
+		onSuccess: (res: any) => {
+			console.log(res);
+
+			if (res.success) {
+				toast({
+					title: 'Password changed successfully!',
+				});
+			} else {
+				toast({
+					title: 'Failed to change password.',
+					variant: 'destructive',
+				});
+			}
+		},
+	});
+
 	const onSubmit = async (data: z.infer<typeof changePasswordSchema>) => {
 		console.log(data);
+
+		mutate({
+			username: data.username,
+			accessCode: data.accessCode,
+			newPassword: data.newPassword,
+		});
 	};
 
 	return (
@@ -101,12 +146,12 @@ export default function Profile() {
 
 							<FormField
 								control={control}
-								name='fullName'
+								name='accessCode'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Full Name</FormLabel>
+										<FormLabel>Access Code</FormLabel>
 										<FormControl>
-											<Input {...field} placeholder='Enter your full name' />
+											<Input {...field} placeholder='Enter your access code' />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -190,7 +235,7 @@ export default function Profile() {
 
 						{step === 3 && (
 							<Button type='submit' className='ml-auto'>
-								Change Password
+								{isPending ? '...' : 'Change Password'}
 							</Button>
 						)}
 					</div>

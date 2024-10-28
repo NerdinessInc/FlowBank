@@ -5,6 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// query
+import { useQuery, useMutation } from '@tanstack/react-query';
+
 // components
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +20,35 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
+// store
+import { appStore } from '@/store';
+
+// services
+import { getBeneficiaryInfo } from '@/services/api';
+
 export default function Beneficiaries() {
+	const { userData } = appStore();
+
+	console.log(userData);
+
+	const { data } = useQuery({
+		queryKey: ['beneficiaryInfo'],
+		queryFn: async () => {
+			const res = await getBeneficiaryInfo({
+				username: userData?.userRec?.pUserName,
+				accountNumber: '',
+				customerId: userData?.userRec?.PXfChar2,
+				accountNameNew: '',
+				accountCurrency: '',
+			});
+
+			return res;
+		},
+		enabled: !!userData,
+	});
+
+	console.log(data);
+
 	const beneficiariesSchema = z.object({
 		beneficiaryAccount: z
 			.string()
@@ -40,6 +71,13 @@ export default function Beneficiaries() {
 	});
 
 	const { handleSubmit } = methods;
+
+	const { mutate, isPending } = useMutation({
+		mutationFn: getBeneficiaryInfo,
+		onSuccess: (res: any) => {
+			console.log(res);
+		},
+	});
 
 	const onSubmit = async (data: z.infer<typeof beneficiariesSchema>) => {
 		console.log(data);
