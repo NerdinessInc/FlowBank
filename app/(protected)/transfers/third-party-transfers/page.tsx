@@ -69,7 +69,7 @@ export default function ThirdPartyTransfers() {
 			.min(1, 'Please enter your destination account'),
 		transferAmount: z.string().min(1, 'Please enter your transfer amount'),
 		transferCode: z.string().min(1, 'Please enter your transfer code'),
-		otp: z.string().min(1, 'Please enter your OTP'),
+		token: z.string().min(1, 'Please enter your Token'),
 	});
 
 	const defaultValues = {
@@ -79,7 +79,7 @@ export default function ThirdPartyTransfers() {
 		destinationAccount: '',
 		transferAmount: '',
 		transferCode: '',
-		otp: '',
+		token: '',
 	};
 
 	const methods = useForm({
@@ -342,12 +342,12 @@ export default function ThirdPartyTransfers() {
 
 							<FormField
 								control={control}
-								name='otp'
+								name='token'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>OTP</FormLabel>
+										<FormLabel>Token</FormLabel>
 										<FormControl>
-											<Input {...field} placeholder='Enter your OTP' />
+											<Input {...field} placeholder='Enter your Token' />
 										</FormControl>
 										<FormMessage />
 									</FormItem>

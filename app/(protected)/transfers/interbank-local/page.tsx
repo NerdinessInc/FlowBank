@@ -64,7 +64,7 @@ export default function InterBankLocalTransfers() {
 		beneficiaryName: z.string().min(1, 'Please enter beneficiary name'),
 		transferAmount: z.string().min(1, 'Please enter transfer amount'),
 		transferCode: z.string().min(1, 'Please enter transfer code'),
-		otp: z.string().min(1, 'Please enter your OTP'),
+		token: z.string().min(1, 'Please enter your Token'),
 	});
 
 	const defaultValues = {
@@ -74,7 +74,7 @@ export default function InterBankLocalTransfers() {
 		beneficiaryName: '',
 		transferAmount: '',
 		transferCode: '',
-		otp: '',
+		token: '',
 	};
 
 	const transferMutation = useMutation({
@@ -274,12 +274,12 @@ export default function InterBankLocalTransfers() {
 
 							<FormField
 								control={control}
-								name='otp'
+								name='token'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>OTP</FormLabel>
+										<FormLabel>Token</FormLabel>
 										<FormControl>
-											<Input {...field} placeholder='Enter your OTP' />
+											<Input {...field} placeholder='Enter your Token' />
 										</FormControl>
 										<FormMessage />
 									</FormItem>

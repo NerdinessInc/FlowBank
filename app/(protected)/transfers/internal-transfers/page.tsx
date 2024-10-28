@@ -66,7 +66,7 @@ export default function InternalTransfers() {
 			.string()
 			.min(1, 'Please enter your destination account'),
 		amount: z.string().min(1, 'Please enter your amount'),
-		otp: z.string().min(1, 'Please enter your oTP'),
+		token: z.string().min(1, 'Please enter your Token'),
 	});
 
 	const defaultValues = {
@@ -74,7 +74,7 @@ export default function InternalTransfers() {
 		dailyTransferLimit: '',
 		destinationAccount: '',
 		amount: '',
-		otp: '',
+		token: '',
 	};
 
 	const methods = useForm({
@@ -222,12 +222,12 @@ export default function InternalTransfers() {
 
 							<FormField
 								control={control}
-								name='otp'
+								name='token'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>OTP</FormLabel>
+										<FormLabel>Token</FormLabel>
 										<FormControl>
-											<Input {...field} placeholder='Enter your oTP' />
+											<Input {...field} placeholder='Enter your Token' />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
