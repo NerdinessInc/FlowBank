@@ -184,7 +184,6 @@ export const postTransferInternal = async (transferData: any) => {
 
 		const result = data['PostTransferInternalResult'];
 
-		// You may need to adjust this part based on the actual response structure
 		return {
 			success: true,
 			data: result,
@@ -217,7 +216,6 @@ export const changePassword = async (values: any) => {
 
 		const result = data['ReturnChangePassResult'];
 
-		// You may need to adjust this part based on the actual response structure
 		return {
 			success: result.bool,
 			data: result,
@@ -242,7 +240,6 @@ export const returnGetBenefInfo = async (userRec: any) => {
 		.trim()
 		.replace(/\s+/g, ' ');
 
-	console.log(BenefInfoBody);
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
 		BenefInfoBody
@@ -250,20 +247,10 @@ export const returnGetBenefInfo = async (userRec: any) => {
 
 	try {
 		const result = data['returnGetBenefInfoResult'];
-		const responseString = result.rs;
-		console.log(responseString);
-		const parsedBeneInfo = responseString
-			.slice(1)
-			.map((beneficiaryString: string) => {
-				const [BenefAccount, BenefName, BenefCurrency] =
-					beneficiaryString.split('|');
-				return {
-					BenefAccount,
-					BenefName,
-					BenefCurrency,
-				};
-			});
-		return { success: true, data: parsedBeneInfo };
+
+		const responseString = result.rs.string;
+
+		return { success: true, data: responseString };
 	} catch (error) {
 		return {
 			success: false,
