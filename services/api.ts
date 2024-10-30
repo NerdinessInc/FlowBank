@@ -1,9 +1,9 @@
 import { soapRequest } from '@/utils';
-// import { getCookie } from '@/utils/cookies';
 import WebClasses from '@/utils/webClasses';
 
 const webClasses = new WebClasses();
 
+// access code
 export const getAccessCode = async () => {
 	const body = `<ReturnGetThreeCodes xmlns="http://con.Ibplc.org/"><UIx>xxx</UIx></ReturnGetThreeCodes>`;
 
@@ -24,6 +24,7 @@ export const getAccessCode = async () => {
 	}
 };
 
+// login user
 export const authUser = async (values: any) => {
 	const authUserBody = `
 	<ReturnAuthuser xmlns="http://con.Ibplc.org/">
@@ -74,6 +75,7 @@ export const authUser = async (values: any) => {
 	}
 };
 
+// get account details
 export const ReturnAcctDetails2 = async (
 	reqType: any,
 	userRec: any,
@@ -194,6 +196,7 @@ export const postTransferInternal = async (transferData: any) => {
 	}
 };
 
+// change user password
 export const changePassword = async (values: any) => {
 	const changePasswordBody = `
     <ReturnChangePass xmlns="http://con.Ibplc.org/">
@@ -224,6 +227,7 @@ export const changePassword = async (values: any) => {
 	}
 };
 
+// get beneficiaries
 export const returnGetBenefInfo = async (userRec: any) => {
 	const BenefInfoBody = `
 	<returnGetBenefInfo xmlns="http://con.Ibplc.org/">
@@ -255,6 +259,7 @@ export const returnGetBenefInfo = async (userRec: any) => {
 	}
 };
 
+// add beneficiary
 export const returnSaveBenefInfo = async (userRec: any, values: any) => {
 	const SaveBenefInfoBody = `
 	<returnSaveBenefInfo xmlns="http://con.Ibplc.org/">
@@ -287,51 +292,435 @@ export const returnSaveBenefInfo = async (userRec: any, values: any) => {
 	}
 };
 
+// get OTP
 export const ReturngetOTUP = async (userRec: any, values: any) => {
-	const SaveBenefInfoBody = `
+	const ReturnOTUPBody = `
 	<ReturngetOTUP xmlns="http://con.Ibplc.org/">
       <pUserTrfToken>
         <pusername>${userRec.pUserName}</pusername>
         <penqaccess>${userRec.PXfChar2}</penqaccess>
         <pacesscode>${userRec.pAcessCode}</pacesscode>
         <ppassword>${userRec.pPassword}</ppassword>
-        <ptrfcode>string</ptrfcode>
-        <pjobtype>string</pjobtype>
-        <pprocesstype>string</pprocesstype>
+        <ptrfcode>''</ptrfcode>
+        <pjobtype>''</pjobtype>
+        <pprocesstype>''</pprocesstype>
         <pjobsubmittedby>${userRec.pFullName}</pjobsubmittedby>
-        <psessionID>string</psessionID>
-        <pemail1>string</pemail1>
-        <pphone1>string</pphone1>
+        <psessionID>${values.sessionID}</psessionID>
+        <pemail1>${values.email}</pemail1>
+        <pphone1>${values.phone}</pphone1>
       </pUserTrfToken>
-      <Sendoption>1</Sendoption>
-    </ReturngetOTUP>
-
-	<returnSaveBenefInfo xmlns="http://con.Ibplc.org/">
-      <pUsername>${userRec.pUserName}</pUsername>
-      <pAccountnumber>${values.accountNumber}</pAccountnumber>
-      <pCustomerid>${userRec.PXfChar2}</pCustomerid>
-      <pAccountnameNew>${values.accountName}</pAccountnameNew>
-      <pAcctCurrency>${values.currency}</pAcctCurrency>
-    </returnSaveBenefInfo>`
+      <Sendoption>${values.option}</Sendoption>
+    </ReturngetOTUP>`
 		.trim()
 		.replace(/\s+/g, ' ');
 
 	const { data } = await soapRequest(
 		'/NibssService/NibssAppService.asmx',
-		SaveBenefInfoBody
+		ReturnOTUPBody
 	);
+
+	console.log(data);
 
 	try {
 		const result = data['returnSaveBenefInfoResult'];
+
 		return {
-			success: result['retMsg'],
+			success: result['retVal'],
 			retVal2: result['retVal2'],
 			retVal: result['retVal'],
+			message: result['retMsg'],
 		};
 	} catch (error) {
 		return {
 			success: false,
 			errorMessage: 'Something went wrong!',
+		};
+	}
+};
+
+// get banks
+export const getNeftBranches = async () => {
+	const body = `
+    <ReturngetNeftBranches xmlns="http://con.Ibplc.org/" />
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['ReturngetNeftBranchesResult'];
+
+		const parseResult = result.rs.string.slice(1).map((branch: string) => {
+			const [
+				bankcode,
+				bankName,
+				sortcode,
+				sortcode1,
+				cbncode,
+				cbncode1,
+				cbncode2,
+				Category,
+			] = branch.split('|');
+
+			return {
+				bankcode,
+				bankName,
+				sortcode,
+				sortcode1,
+				cbncode,
+				cbncode1,
+				cbncode2,
+				category: Category,
+			};
+		});
+
+		return {
+			success: true,
+			data: parseResult,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Failed to fetch NEFT branches. Please try again.',
+		};
+	}
+};
+
+// account enquiry
+export const returnNameEnquiry = async (
+	accountNo: string,
+	bankCode: string
+) => {
+	const body = `
+    <ReturnNameEnquiry xmlns="http://con.Ibplc.org/">
+      <acctNo>${accountNo}</acctNo>
+      <BankCode>${bankCode}</BankCode>
+    </ReturnNameEnquiry>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['ReturnNameEnquiryResult'];
+
+		console.log(data);
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Failed to perform name enquiry. Please try again.',
+		};
+	}
+};
+
+export const doNIPTransfer = async (userRec: any, values: any) => {
+	const body = `
+    <DoNIPTransfer xmlns="http://con.Ibplc.org/">
+      <pUserTrfToken>
+        <pSessionId>${userRec.pSessionId}</pSessionId>
+        <NameEnquiryRef>${values.NameEnquiryRef}</NameEnquiryRef>
+        <DestinationInstitutionCode	>${values.DestinationInstitutionCode}</DestinationInstitutionCode>
+        <ChannelCode>${values.ChannelCode}</ChannelCode>
+        <pInitTime>${userRec.pInitTime}</pInitTime>
+        <pTokValue>${userRec.pTokValue}</pTokValue>
+        <penqaccess>${userRec.penqaccess}</penqaccess>
+        <pUname>${userRec.pUname}</pUname>
+        <pStatus>${userRec.pStatus}</pStatus>
+        <Pamount>${userRec.Pamount}</Pamount>
+        <pTransRef>${userRec.pTransRef}</pTransRef>
+        <pTrfType>${userRec.pTrfType}</pTrfType>
+        <pTimeStamp>${userRec.pTimeStamp}</pTimeStamp>
+        <pGsmStatus>${userRec.pGsmStatus}</pGsmStatus>
+        <pUserEmail>${userRec.pUserEmail}</pUserEmail>
+        <pUserGSM>${userRec.pUserGSM}</pUserGSM>
+        <pSrcAcct>${userRec.pSrcAcct}</pSrcAcct>
+        <OriginatorAccountName>${values.OriginatorAccountName}</OriginatorAccountName>
+        <OriginatorAccountNumber>${values.OriginatorAccountNumber}</OriginatorAccountNumber>
+        <OriginatorBankVerificationNumber>${values.OriginatorBankVerificationNumber}</OriginatorBankVerificationNumber>
+        <OriginatorKYCLevel>${values.OriginatorKYCLevel}</OriginatorKYCLevel>
+        <pDestAcct>${userRec.pDestAcct}</pDestAcct>
+        <BeneficiaryAccountName>${values.BeneficiaryAccountName}</BeneficiaryAccountName>
+        <BeneficiaryAccountNumber>${values.BeneficiaryAccountNumber}</BeneficiaryAccountNumber>
+        <BeneficiaryBankVerificationNumber>${values.BeneficiaryBankVerificationNumber}</BeneficiaryBankVerificationNumber>
+        <BeneficiaryKYCLevel>${values.BeneficiaryKYCLevel}</BeneficiaryKYCLevel>
+        <TransactionLocation>${values.TransactionLocation}</TransactionLocation>
+        <pFullName>${userRec.pFullName}</pFullName>
+        <Narration>${values.Narration}</Narration>
+        <PaymentReference>${values.PaymentReference}</PaymentReference>
+        <retVal>${values.retVal}</retVal>
+        <retMsg>${values.retMsg}</retMsg>
+        <theTree>
+          <Char1>${values.theTree.Char1}</Char1>
+          <Char2>${values.theTree.Char2}</Char2>
+          <Char3>${values.theTree.Char3}</Char3>
+          <bool>${values.theTree.bool}</bool>
+          <retMsg>${values.theTree.retMsg}</retMsg>
+          <cAC>${values.theTree.cAC}</cAC>
+        </theTree>
+        <AcAc>${values.AcAc}</AcAc>
+        <pstatusLocal>${userRec.pstatusLocal}</pstatusLocal>
+        <pstatusIntBank>${userRec.pstatusIntBank}</pstatusIntBank>
+        <pmsgString>${userRec.pmsgString}</pmsgString>
+        <pDestAcctIntBnk>${userRec.pDestAcctIntBnk}</pDestAcctIntBnk>
+        <pDestBenefIntBnk>${userRec.pDestBenefIntBnk}</pDestBenefIntBnk>
+        <pDestBankCode>${userRec.pDestBankCode}</pDestBankCode>
+        <psendOptions>${userRec.psendOptions}</psendOptions>
+        <pBillPaymentRec>
+          <pBillID>${userRec.pBillPaymentRec.pBillID}</pBillID>
+          <pPlatformName>${userRec.pBillPaymentRec.pPlatformName}</pPlatformName>
+          <pBillRef1>${userRec.pBillPaymentRec.pBillRef1}</pBillRef1>
+          <pBillRef2>${userRec.pBillPaymentRec.pBillRef2}</pBillRef2>
+          <pBillRef3>${userRec.pBillPaymentRec.pBillRef3}</pBillRef3>
+          <pCustName>${userRec.pBillPaymentRec.pCustName}</pCustName>
+          <pAcctTitle>${userRec.pBillPaymentRec.pAcctTitle}</pAcctTitle>
+          <pSourceAcct>${userRec.pBillPaymentRec.pSourceAcct}</pSourceAcct>
+          <pPayeeAcct>${userRec.pBillPaymentRec.pPayeeAcct}</pPayeeAcct>
+          <pBillMonth>${userRec.pBillPaymentRec.pBillMonth}</pBillMonth>
+          <pBillYear>${userRec.pBillPaymentRec.pBillYear}</pBillYear>
+          <pBillStartDt>${userRec.pBillPaymentRec.pBillStartDt}</pBillStartDt>
+          <pBillEndDt>${userRec.pBillPaymentRec.pBillEndDt}</pBillEndDt>
+          <pTokenRefId>${userRec.pBillPaymentRec.pTokenRefId}</pTokenRefId>
+          <pBillPayed>${userRec.pBillPaymentRec.pBillPayed}</pBillPayed>
+          <pBillAmount>${userRec.pBillPaymentRec.pBillAmount}</pBillAmount>
+          <pDB>${userRec.pBillPaymentRec.pDB}</pDB>
+          <pEnqAcess>${userRec.pBillPaymentRec.pEnqAcess}</pEnqAcess>
+          <pUserName>${userRec.pBillPaymentRec.pUserName}</pUserName>
+        </pBillPaymentRec>
+      </pUserTrfToken>
+    </DoNIPTransfer>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['DoNIPTransferResult'];
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Failed to perform NIP transfer. Please try again.',
+		};
+	}
+};
+
+export const returnGetFundsTransfer = async (userRec: any, values: any) => {
+	const body = `
+    <ReturngetFundstransfer xmlns="http://con.Ibplc.org/">
+      <pUserTrfToken>
+        <pSessionId>${userRec.pSessionId}</pSessionId>
+        <NameEnquiryRef>${values.NameEnquiryRef}</NameEnquiryRef>
+        <DestinationInstitutionCode>${values.DestinationInstitutionCode}</DestinationInstitutionCode>
+        <ChannelCode>${values.ChannelCode}</ChannelCode>
+        <pInitTime>${userRec.pInitTime}</pInitTime>
+        <pTokValue>${userRec.pTokValue}</pTokValue>
+        <penqaccess>${userRec.penqaccess}</penqaccess>
+        <pUname>${userRec.pUname}</pUname>
+        <pStatus>${userRec.pStatus}</pStatus>
+        <Pamount>${userRec.Pamount}</Pamount>
+        <pTransRef>${userRec.pTransRef}</pTransRef>
+        <pTrfType>${userRec.pTrfType}</pTrfType>
+        <pTimeStamp>${userRec.pTimeStamp}</pTimeStamp>
+        <pGsmStatus>${userRec.pGsmStatus}</pGsmStatus>
+        <pUserEmail>${userRec.pUserEmail}</pUserEmail>
+        <pUserGSM>${userRec.pUserGSM}</pUserGSM>
+        <pSrcAcct>${userRec.pSrcAcct}</pSrcAcct>
+        <OriginatorAccountName>${values.OriginatorAccountName}</OriginatorAccountName>
+        <OriginatorAccountNumber>${values.OriginatorAccountNumber}</OriginatorAccountNumber>
+        <OriginatorBankVerificationNumber>${values.OriginatorBankVerificationNumber}</OriginatorBankVerificationNumber>
+        <OriginatorKYCLevel>${values.OriginatorKYCLevel}</OriginatorKYCLevel>
+        <pDestAcct>${userRec.pDestAcct}</pDestAcct>
+        <BeneficiaryAccountName>${values.BeneficiaryAccountName}</BeneficiaryAccountName>
+        <BeneficiaryAccountNumber>${values.BeneficiaryAccountNumber}</BeneficiaryAccountNumber>
+        <BeneficiaryBankVerificationNumber>${values.BeneficiaryBankVerificationNumber}</BeneficiaryBankVerificationNumber>
+        <BeneficiaryKYCLevel>${values.BeneficiaryKYCLevel}</BeneficiaryKYCLevel>
+        <TransactionLocation>${values.TransactionLocation}</TransactionLocation>
+        <pFullName>${userRec.pFullName}</pFullName>
+        <Narration>${values.Narration}</Narration>
+        <PaymentReference>${values.PaymentReference}</PaymentReference>
+        <retVal>${values.retVal}</retVal>
+        <retMsg>${values.retMsg}</retMsg>
+        <theTree>
+          <Char1>${values.theTree.Char1}</Char1>
+          <Char2>${values.theTree.Char2}</Char2>
+          <Char3>${values.theTree.Char3}</Char3>
+          <bool>${values.theTree.bool}</bool>
+          <retMsg>${values.theTree.retMsg}</retMsg>
+          <cAC>${values.theTree.cAC}</cAC>
+        </theTree>
+        <AcAc>${values.AcAc}</AcAc>
+        <pstatusLocal>${userRec.pstatusLocal}</pstatusLocal>
+        <pstatusIntBank>${userRec.pstatusIntBank}</pstatusIntBank>
+        <pmsgString>${userRec.pmsgString}</pmsgString>
+        <pDestAcctIntBnk>${userRec.pDestAcctIntBnk}</pDestAcctIntBnk>
+        <pDestBenefIntBnk>${userRec.pDestBenefIntBnk}</pDestBenefIntBnk>
+        <pDestBankCode>${userRec.pDestBankCode}</pDestBankCode>
+        <psendOptions>${userRec.psendOptions}</psendOptions>
+        <pBillPaymentRec>
+          <pBillID>${userRec.pBillPaymentRec.pBillID}</pBillID>
+          <pPlatformName>${userRec.pBillPaymentRec.pPlatformName}</pPlatformName>
+          <pBillRef1>${userRec.pBillPaymentRec.pBillRef1}</pBillRef1>
+          <pBillRef2>${userRec.pBillPaymentRec.pBillRef2}</pBillRef2>
+          <pBillRef3>${userRec.pBillPaymentRec.pBillRef3}</pBillRef3>
+          <pCustName>${userRec.pBillPaymentRec.pCustName}</pCustName>
+          <pAcctTitle>${userRec.pBillPaymentRec.pAcctTitle}</pAcctTitle>
+          <pSourceAcct>${userRec.pBillPaymentRec.pSourceAcct}</pSourceAcct>
+          <pPayeeAcct>${userRec.pBillPaymentRec.pPayeeAcct}</pPayeeAcct>
+          <pBillMonth>${userRec.pBillPaymentRec.pBillMonth}</pBillMonth>
+          <pBillYear>${userRec.pBillPaymentRec.pBillYear}</pBillYear>
+          <pBillStartDt>${userRec.pBillPaymentRec.pBillStartDt}</pBillStartDt>
+          <pBillEndDt>${userRec.pBillPaymentRec.pBillEndDt}</pBillEndDt>
+          <pTokenRefId>${userRec.pBillPaymentRec.pTokenRefId}</pTokenRefId>
+          <pBillPayed>${userRec.pBillPaymentRec.pBillPayed}</pBillPayed>
+          <pBillAmount>${userRec.pBillPaymentRec.pBillAmount}</pBillAmount>
+          <pDB>${userRec.pBillPaymentRec.pDB}</pDB>
+          <pEnqAcess>${userRec.pBillPaymentRec.pEnqAcess}</pEnqAcess>
+          <pUserName>${userRec.pBillPaymentRec.pUserName}</pUserName>
+        </pBillPaymentRec>
+      </pUserTrfToken>
+    </ReturngetFundstransfer>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['ReturngetFundstransferResult'];
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage:
+				'Failed to get funds transfer information. Please try again.',
+		};
+	}
+};
+
+export const doNIPTransferReversal = async (userRec: any, values: any) => {
+	const body = `
+    <DoNIPTransfer_reverasal xmlns="http://con.Ibplc.org/">
+      <pUserTrfToken>
+        <pSessionId>${userRec.pSessionId}</pSessionId>
+        <NameEnquiryRef>${values.NameEnquiryRef}</NameEnquiryRef>
+        <DestinationInstitutionCode>${values.DestinationInstitutionCode}</DestinationInstitutionCode>
+        <ChannelCode>${values.ChannelCode}</ChannelCode>
+        <pInitTime>${userRec.pInitTime}</pInitTime>
+        <pTokValue>${userRec.pTokValue}</pTokValue>
+        <penqaccess>${userRec.penqaccess}</penqaccess>
+        <pUname>${userRec.pUname}</pUname>
+        <pStatus>${userRec.pStatus}</pStatus>
+        <Pamount>${userRec.Pamount}</Pamount>
+        <pTransRef>${userRec.pTransRef}</pTransRef>
+        <pTrfType>${userRec.pTrfType}</pTrfType>
+        <pTimeStamp>${userRec.pTimeStamp}</pTimeStamp>
+        <pGsmStatus>${userRec.pGsmStatus}</pGsmStatus>
+        <pUserEmail>${userRec.pUserEmail}</pUserEmail>
+        <pUserGSM>${userRec.pUserGSM}</pUserGSM>
+        <pSrcAcct>${userRec.pSrcAcct}</pSrcAcct>
+        <OriginatorAccountName>${values.OriginatorAccountName}</OriginatorAccountName>
+        <OriginatorAccountNumber>${values.OriginatorAccountNumber}</OriginatorAccountNumber>
+        <OriginatorBankVerificationNumber>${values.OriginatorBankVerificationNumber}</OriginatorBankVerificationNumber>
+        <OriginatorKYCLevel>${values.OriginatorKYCLevel}</OriginatorKYCLevel>
+        <pDestAcct>${userRec.pDestAcct}</pDestAcct>
+        <BeneficiaryAccountName>${values.BeneficiaryAccountName}</BeneficiaryAccountName>
+        <BeneficiaryAccountNumber>${values.BeneficiaryAccountNumber}</BeneficiaryAccountNumber>
+        <BeneficiaryBankVerificationNumber>${values.BeneficiaryBankVerificationNumber}</BeneficiaryBankVerificationNumber>
+        <BeneficiaryKYCLevel>${values.BeneficiaryKYCLevel}</BeneficiaryKYCLevel>
+        <TransactionLocation>${values.TransactionLocation}</TransactionLocation>
+        <pFullName>${userRec.pFullName}</pFullName>
+        <Narration>${values.Narration}</Narration>
+        <PaymentReference>${values.PaymentReference}</PaymentReference>
+        <retVal>${values.retVal}</retVal>
+        <retMsg>${values.retMsg}</retMsg>
+        <theTree>
+          <Char1>${values.theTree.Char1}</Char1>
+          <Char2>${values.theTree.Char2}</Char2>
+          <Char3>${values.theTree.Char3}</Char3>
+          <bool>${values.theTree.bool}</bool>
+          <retMsg>${values.theTree.retMsg}</retMsg>
+          <cAC>${values.theTree.cAC}</cAC>
+        </theTree>
+        <AcAc>${values.AcAc}</AcAc>
+        <pstatusLocal>${userRec.pstatusLocal}</pstatusLocal>
+        <pstatusIntBank>${userRec.pstatusIntBank}</pstatusIntBank>
+        <pmsgString>${userRec.pmsgString}</pmsgString>
+        <pDestAcctIntBnk>${userRec.pDestAcctIntBnk}</pDestAcctIntBnk>
+        <pDestBenefIntBnk>${userRec.pDestBenefIntBnk}</pDestBenefIntBnk>
+        <pDestBankCode>${userRec.pDestBankCode}</pDestBankCode>
+        <psendOptions>${userRec.psendOptions}</psendOptions>
+        <pBillPaymentRec>
+          <pBillID>${userRec.pBillPaymentRec.pBillID}</pBillID>
+          <pPlatformName>${userRec.pBillPaymentRec.pPlatformName}</pPlatformName>
+          <pBillRef1>${userRec.pBillPaymentRec.pBillRef1}</pBillRef1>
+          <pBillRef2>${userRec.pBillPaymentRec.pBillRef2}</pBillRef2>
+          <pBillRef3>${userRec.pBillPaymentRec.pBillRef3}</pBillRef3>
+          <pCustName>${userRec.pBillPaymentRec.pCustName}</pCustName>
+          <pAcctTitle>${userRec.pBillPaymentRec.pAcctTitle}</pAcctTitle>
+          <pSourceAcct>${userRec.pBillPaymentRec.pSourceAcct}</pSourceAcct>
+          <pPayeeAcct>${userRec.pBillPaymentRec.pPayeeAcct}</pPayeeAcct>
+          <pBillMonth>${userRec.pBillPaymentRec.pBillMonth}</pBillMonth>
+          <pBillYear>${userRec.pBillPaymentRec.pBillYear}</pBillYear>
+          <pBillStartDt>${userRec.pBillPaymentRec.pBillStartDt}</pBillStartDt>
+          <pBillEndDt>${userRec.pBillPaymentRec.pBillEndDt}</pBillEndDt>
+          <pTokenRefId>${userRec.pBillPaymentRec.pTokenRefId}</pTokenRefId>
+          <pBillPayed>${userRec.pBillPaymentRec.pBillPayed}</pBillPayed>
+          <pBillAmount>${userRec.pBillPaymentRec.pBillAmount}</pBillAmount>
+          <pDB>${userRec.pBillPaymentRec.pDB}</pDB>
+          <pEnqAcess>${userRec.pBillPaymentRec.pEnqAcess}</pEnqAcess>
+          <pUserName>${userRec.pBillPaymentRec.pUserName}</pUserName>
+        </pBillPaymentRec>
+      </pUserTrfToken>
+    </DoNIPTransfer_reverasal>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['DoNIPTransfer_reverasalResult'];
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage:
+				'Failed to perform NIP transfer reversal. Please try again.',
 		};
 	}
 };

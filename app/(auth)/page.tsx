@@ -20,7 +20,9 @@ import { useMutation } from '@tanstack/react-query';
 
 // components
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+
 import {
 	Form,
 	FormControl,
@@ -29,7 +31,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+
 import {
 	Popover,
 	PopoverContent,
@@ -93,9 +95,9 @@ const LoginForm = () => {
 	const { handleSubmit } = methods;
 
 	const authUserMutation = useMutation({
-		mutationFn: authUser,		
+		mutationFn: authUser,
 		onSuccess: (res: any) => {
-			console.log("Login Response")
+			console.log('Login Response');
 			console.log(res);
 			// wait(30000);
 			if (!res.success) {
@@ -231,4 +233,3 @@ export default LoginForm;
 function wait(arg0: number) {
 	throw new Error('Function not implemented.');
 }
-

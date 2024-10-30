@@ -1,13 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // query
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+
+// icons
+import { HelpCircle } from 'lucide-react';
 
 // components
 import { Loading } from '@/components/Loader';
@@ -33,6 +37,12 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '@/components/ui/popover';
+
 // store
 import { appStore } from '@/store';
 
@@ -40,13 +50,29 @@ import { appStore } from '@/store';
 import { formatCurrency } from '@/utils/formatNumber';
 
 // services
-import { ReturnAcctDetails2 } from '@/services/api';
+import {
+	ReturnAcctDetails2,
+	getNeftBranches,
+	returnNameEnquiry,
+	getAccessCode,
+	ReturngetOTUP,
+} from '@/services/api';
 
 export default function ThirdPartyTransfers() {
 	const { userData } = appStore();
 
 	const [step, setStep] = useState(1);
+	const [bankCategory, setBankCategory] = useState<'2-4' | '7-9' | '10-11'>(
+		'2-4'
+	);
 
+	const [accessCodeChars, setAccessCodeChars] = useState<any>({});
+	const [notificationMode, setNotificationMode] = useState<'1' | '2'>('1');
+
+	const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
+	const [sessionID, setSessionID] = useState(null);
+
+	// get account details
 	const { data, isLoading } = useQuery({
 		queryKey: ['internal-transfers'],
 		queryFn: () =>
@@ -58,17 +84,55 @@ export default function ThirdPartyTransfers() {
 		enabled: !!userData?.acctCollection?.AcctStruct,
 	});
 
+	useEffect(() => {
+		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
+	}, []);
+
+	// session id
+	useEffect(() => {
+		async function fetchSessionID() {
+			const res = await fetch('/api/getSessionId');
+
+			if (res.ok) {
+				const data = await res.json();
+				setSessionID(data.sessionID);
+			} else {
+				console.error('Failed to fetch session ID');
+			}
+		}
+
+		fetchSessionID();
+	}, []);
+
+	// get banks
+	const { data: neftBranches, isLoading: isLoadingNeftBranches } = useQuery({
+		queryKey: ['neft-branches'],
+		queryFn: getNeftBranches,
+	});
+
+	// send otp
+	const { mutate, isPending } = useMutation({
+		mutationFn: (data: any) => ReturngetOTUP(data.userRec, data.values),
+		onSuccess: (res: any) => {
+			console.log(res);
+		},
+	});
+
 	const thirdPartyTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		dailyTransferLimit: z
 			.string()
 			.min(1, 'Please enter your daily transfer limit'),
 		beneficiary: z.string().min(1, 'Please enter your beneficiary'),
-		destinationAccount: z
+		bankCode: z.string().min(1, 'Please enter your bank code'),
+		destinationAccountNumber: z
 			.string()
-			.min(1, 'Please enter your destination account'),
+			.min(10, 'Please enter your destination account'),
+		destinationAccountName: z
+			.string()
+			.min(1, 'Please enter your destination account name'),
 		transferAmount: z.string().min(1, 'Please enter your transfer amount'),
-		transferCode: z.string().min(1, 'Please enter your transfer code'),
+		transferCode: z.string().min(3, 'Please enter your transfer code'),
 		token: z.string().min(1, 'Please enter your Token'),
 	});
 
@@ -76,7 +140,9 @@ export default function ThirdPartyTransfers() {
 		sourceAccount: '',
 		dailyTransferLimit: '',
 		beneficiary: '',
-		destinationAccount: '',
+		bankCode: '',
+		destinationAccountNumber: '',
+		destinationAccountName: '',
 		transferAmount: '',
 		transferCode: '',
 		token: '',
@@ -88,12 +154,41 @@ export default function ThirdPartyTransfers() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger, getValues, setValue } = methods;
+	const { handleSubmit, control, trigger, getValues, setValue, watch } =
+		methods;
+
+	// name enquiry
+	const { data: nameEnquiry, isLoading: isLoadingNameEnquiry } = useQuery({
+		queryKey: [
+			'name-enquiry',
+			watch('bankCode'),
+			watch('destinationAccountNumber'),
+		],
+		queryFn: () =>
+			returnNameEnquiry(watch('destinationAccountNumber'), watch('bankCode')),
+		enabled:
+			!!watch('bankCode') && watch('destinationAccountNumber').length >= 10,
+	});
+
+	console.log(nameEnquiry);
+
+	useEffect(() => {
+		if (watch('sourceAccount').length >= 10) {
+			setSelectedAccount(
+				userData?.acctCollection?.AcctStruct?.slice(1).find(
+					(account: any) =>
+						account.AccountNumber.toString() === watch('sourceAccount')
+				)
+			);
+		}
+	}, [watch('sourceAccount'), userData]);
+
+	console.log(userData);
 
 	const nextStep = async () => {
 		const fields = {
 			1: ['sourceAccount', 'dailyTransferLimit'],
-			2: ['beneficiary', 'destinationAccount'],
+			2: ['bankCode', 'destinationAccount'],
 			3: ['transferAmount', 'transferCode'],
 		}[step];
 
@@ -109,10 +204,25 @@ export default function ThirdPartyTransfers() {
 	};
 
 	const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
-		console.log('Processing transfer:', data);
+		const newData = {
+			...data,
+			DestinationInstitutionCode: data.bankCode,
+			BeneficiaryAccountNumber: data.destinationAccountNumber,
+			BeneficiaryAccountName: data.destinationAccountName,
+		};
+
+		console.log('Processing transfer:', newData);
 	};
 
-	if (isLoading) return <Loading />;
+	const banks = neftBranches?.data?.filter((bank: any) => {
+		const [start, end] = bankCategory.split('-').map(Number);
+
+		const categoryNum = Number(bank.category);
+
+		return categoryNum >= start && categoryNum <= end;
+	});
+
+	if (isLoading || isLoadingNeftBranches) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
@@ -189,14 +299,57 @@ export default function ThirdPartyTransfers() {
 
 					{step === 2 && (
 						<>
+							{/* select bank category */}
+							<div className='flex flex-col justify-between'>
+								<div className='text-sm font-semibold'>
+									Select Bank Category
+								</div>
+
+								<Select
+									onValueChange={(newValue) => {
+										setBankCategory(newValue as any);
+									}}
+									value={bankCategory}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder='Select Bank Category' />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value='2-4'>
+											Commercial Banks/Discount Houses
+										</SelectItem>
+										<SelectItem value='7-9'>
+											Merchant/Microfinance Banks
+										</SelectItem>
+										<SelectItem value='10-11'>
+											Mobile Money Operators/Virtual Banks
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
 							<FormField
 								control={control}
-								name='beneficiary'
+								name='bankCode'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Beneficiary</FormLabel>
+										<FormLabel>Destination Bank</FormLabel>
 										<FormControl>
-											<Input {...field} placeholder='Enter your beneficiary' />
+											<Select
+												onValueChange={field.onChange}
+												value={field.value}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Destination Bank' />
+												</SelectTrigger>
+												<SelectContent>
+													{banks?.map((bank: any, index: number) => (
+														<SelectItem key={index} value={bank.bankcode}>
+															{bank.bankName}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -205,7 +358,7 @@ export default function ThirdPartyTransfers() {
 
 							<FormField
 								control={control}
-								name='destinationAccount'
+								name='destinationAccountNumber'
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>Destination Account</FormLabel>
@@ -213,6 +366,7 @@ export default function ThirdPartyTransfers() {
 											<Input
 												{...field}
 												placeholder='Enter your destination account'
+												disabled={isLoadingNameEnquiry}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -246,7 +400,40 @@ export default function ThirdPartyTransfers() {
 								name='transferCode'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Transfer Code</FormLabel>
+										<FormLabel className='flex items-end gap-2'>
+											<p> Transfer Code</p>
+
+											<Popover>
+												<PopoverTrigger asChild>
+													<button type='button' className='mt-6'>
+														<HelpCircle className='h-5 w-5 text-gray-500' />
+													</button>
+												</PopoverTrigger>
+
+												<PopoverContent
+													side='right'
+													className='w-[200px] text-sm'
+												>
+													<p>
+														Enter the{' '}
+														<span className='font-bold'>
+															{accessCodeChars.Char1}
+														</span>
+														,
+														<span className='font-bold'>
+															{' '}
+															{accessCodeChars.Char2}
+														</span>
+														, and
+														<span className='font-bold'>
+															{' '}
+															{accessCodeChars.Char3}
+														</span>{' '}
+														Characters of your transfer code.
+													</p>
+												</PopoverContent>
+											</Popover>
+										</FormLabel>
 										<FormControl>
 											<Input
 												{...field}
@@ -293,11 +480,9 @@ export default function ThirdPartyTransfers() {
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value='*'>*</SelectItem>
-											{Array.from({ length: 26 }, (_, i) =>
-												String.fromCharCode(65 + i)
-											).map((letter) => (
-												<SelectItem key={letter} value={letter}>
-													{letter}
+											{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+												<SelectItem key={num} value={num.toString()}>
+													{num}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -316,11 +501,9 @@ export default function ThirdPartyTransfers() {
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value='*'>*</SelectItem>
-											{Array.from({ length: 26 }, (_, i) =>
-												String.fromCharCode(97 + i)
-											).map((letter) => (
-												<SelectItem key={letter} value={letter}>
-													{letter}
+											{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+												<SelectItem key={num} value={num.toString()}>
+													{num}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -336,15 +519,56 @@ export default function ThirdPartyTransfers() {
 								You are about to transfer{' '}
 								{formatCurrency(getValues('transferAmount'))} from your account{' '}
 								{getValues('sourceAccount')} to{' '}
-								{getValues('destinationAccount')}, {getValues('beneficiary')}.
+								{getValues('destinationAccountNumber')},{' '}
+								{getValues('destinationAccountName')}.
 							</p>
 							<p className='font-bold mb-4'>Do you want to proceed?</p>
+
+							{/* select email or sms */}
+							<div className='flex gap-3 justify-between items-center'>
+								<div className='flex flex-col flex-1'>
+									<Select
+										onValueChange={(newValue) => {
+											setNotificationMode(newValue as any);
+										}}
+										value={notificationMode}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder='Select Notification Mode' />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='1'>Email</SelectItem>
+											<SelectItem value='2'>SMS</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+
+								<Button
+									type='button'
+									onClick={() =>
+										mutate({
+											userRec: userData?.userRec,
+											values: {
+												option: notificationMode,
+												sessionID,
+												email: selectedAccount?.Email,
+												phone: selectedAccount?.Gsm,
+											},
+										})
+									}
+									variant='outline'
+									className='flex-1'
+									disabled={isPending}
+								>
+									Send
+								</Button>
+							</div>
 
 							<FormField
 								control={control}
 								name='token'
 								render={({ field }) => (
-									<FormItem>
+									<FormItem className='mt-4'>
 										<FormLabel>Token</FormLabel>
 										<FormControl>
 											<Input {...field} placeholder='Enter your Token' />
