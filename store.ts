@@ -3,94 +3,103 @@ import { getCookie, setCookie, clearCookie } from './utils/cookies';
 import { UserDataResponse } from './types/auth';
 
 interface AppStore {
-  userData: Partial<UserDataResponse> | null;
-  appData: UserDataResponse | null;
-  menuControlData: UserDataResponse | null;
-  mainMenuData: UserDataResponse | null;
-  setUserData: (userData: UserDataResponse) => void;
-  setAppData: (appData: UserDataResponse) => void;
-  setMenuControlData: (menuControlData: UserDataResponse) => void;
-  setMainMenuData: (mainMenuData: UserDataResponse) => void;
-  login: (userData: UserDataResponse) => void;
-  logout: () => void;
+	userData: Partial<UserDataResponse> | null;
+	appData: UserDataResponse | null;
+	menuControlData: UserDataResponse | null;
+	mainMenuData: UserDataResponse | null;
+	accessCode: any;
+	setUserData: (userData: UserDataResponse) => void;
+	setAppData: (appData: UserDataResponse) => void;
+	setMenuControlData: (menuControlData: UserDataResponse) => void;
+	setMainMenuData: (mainMenuData: UserDataResponse) => void;
+	setAccessCode: (accessCode: string) => void;
+	login: (userData: UserDataResponse) => void;
+	logout: () => void;
 }
 
 const safeParseJSON = (data: any) => {
-  if (!data) return null;
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return null;
-  }
+	if (!data) return null;
+
+	try {
+		return JSON.parse(data);
+	} catch (e) {
+		return null;
+	}
 };
 
 const appStore = create<AppStore>()((set) => ({
-  userData: safeParseJSON(getCookie('nomase_user')) || null,
-  setUserData: (userData: UserDataResponse) => set({ userData }),
+	userData: safeParseJSON(getCookie('nomase_user')) || null,
+	setUserData: (userData: UserDataResponse) => set({ userData }),
 
-  appData: safeParseJSON(getCookie('nomase_app')) || null,
-  setAppData: (appData: any) => set({ appData }),
+	appData: safeParseJSON(getCookie('nomase_app')) || null,
+	setAppData: (appData: any) => set({ appData }),
 
-  menuControlData: safeParseJSON(getCookie('nomase_menu')) || null,
-  setMenuControlData: (menuControlData: any) => set({ menuControlData }),
+	menuControlData: safeParseJSON(getCookie('nomase_menu')) || null,
+	setMenuControlData: (menuControlData: any) => set({ menuControlData }),
 
-  mainMenuData: safeParseJSON(getCookie('nomase_main')) || null,
-  setMainMenuData: (mainMenuData: any) => set({ mainMenuData }),
+	mainMenuData: safeParseJSON(getCookie('nomase_main')) || null,
+	setMainMenuData: (mainMenuData: any) => set({ mainMenuData }),
 
-  login: (state) => {
-    set(() => ({
-      userData: state,
-    }));
+	accessCode: safeParseJSON(getCookie('nomase_access')) || '',
+	setAccessCode: (accessCode: string) => {
+		set({ accessCode });
 
-    const userRec = state.UserRec;
-    const acctCollection = state.AcctCollection;
-    const codProd = state.cod_prod;
-    const companyUsers = state.CompanyUsers;
-    const acctBlocks = state.AcctBlocks;
-    const menuControls = state.mMenuControls;
-    const xMainMenu = state.xMainMenu;
+		setCookie('nomase_access', JSON.stringify(accessCode));
+	},
 
-    const appCookieData = {
-      codProd,
-      companyUsers,
-      menuControls,
-      acctBlocks,
-    };
+	login: (state) => {
+		set(() => ({
+			userData: state,
+		}));
 
-    const userCookieData = {
-      userRec,
-      acctCollection,
-    };
+		const userRec = state.UserRec;
+		const acctCollection = state.AcctCollection;
+		const codProd = state.cod_prod;
+		const companyUsers = state.CompanyUsers;
+		const acctBlocks = state.AcctBlocks;
+		const menuControls = state.mMenuControls;
+		const xMainMenu = state.xMainMenu;
+		const pLimitsObject = state.pLimitsObject;
 
-    const mainMenuCookieData = {
-      xMainMenu,
-    };
+		const appCookieData = {
+			codProd,
+			companyUsers,
+			menuControls,
+			acctBlocks,
+		};
 
-    setCookie('nomase_app', JSON.stringify(appCookieData));
-    setCookie('nomase_user', JSON.stringify(userCookieData));
-    setCookie('nomase_main', JSON.stringify(mainMenuCookieData));
+		const userCookieData = {
+			userRec,
+			acctCollection,
+			pLimitsObject,
+		};
 
-    console.log('Cookies saved successfully!');
-    console.log(userCookieData);
+		const mainMenuCookieData = {
+			xMainMenu,
+		};
 
-    location.href = '/dashboard';
-  },
+		setCookie('nomase_app', JSON.stringify(appCookieData));
+		setCookie('nomase_user', JSON.stringify(userCookieData));
+		setCookie('nomase_main', JSON.stringify(mainMenuCookieData));
 
-  logout: () => {
-    set(() => ({
-      userData: null,
-      appData: null,
-      menuControlData: null,
-      mainMenuData: null,
-    }));
+		location.href = '/dashboard';
+	},
 
-    clearCookie('nomase_user');
-    clearCookie('nomase_app');
-    clearCookie('nomase_menu');
-    clearCookie('nomase_main');
+	logout: () => {
+		set(() => ({
+			userData: null,
+			appData: null,
+			menuControlData: null,
+			mainMenuData: null,
+		}));
 
-    location.href = '/';
-  },
+		clearCookie('nomase_user');
+		clearCookie('nomase_app');
+
+		clearCookie('nomase_main');
+
+		location.href = '/';
+	},
 }));
 
 export { appStore };

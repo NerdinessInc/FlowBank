@@ -8,12 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// icons
-import { CalendarIcon } from 'lucide-react';
-
 // components
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Loading } from '@/components/Loader';
+import { Input } from '@/components/ui/input';
 import {
 	Form,
 	FormControl,
@@ -23,38 +21,62 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
-import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@/components/ui/table';
 
 // utils
-import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/utils/formatNumber';
+
+// store
+import { appStore } from '@/store';
+
+// services
+import { getAccountHistory, ReturnAcctDetails2 } from '@/services/api';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 export default function FullStatement() {
+	const { userData } = appStore();
+
 	const [step, setStep] = useState(1);
+	const [accountHistory, setAccountHistory] = useState<any[]>([]);
+
+	const { data, isLoading } = useQuery({
+		queryKey: ['full-statement'],
+		queryFn: () =>
+			ReturnAcctDetails2(
+				2,
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
 
 	const fullStatementSchema = z.object({
 		account: z.string().min(1, 'Please enter your account'),
-		startDate: z.date({
+		startDate: z.string({
 			required_error: 'Please enter the start date',
 		}),
-		endDate: z.date({
+		endDate: z.string({
 			required_error: 'Please enter the end date',
 		}),
 	});
 
 	const defaultValues = {
 		account: '',
-		startDate: new Date(),
-		endDate: new Date(),
+		startDate: '',
+		endDate: '',
 	};
 
 	const methods = useForm({
@@ -76,164 +98,176 @@ export default function FullStatement() {
 		setStep(1);
 	};
 
+	const { mutate, isPending } = useMutation({
+		mutationFn: (data: any) =>
+			getAccountHistory(data.account, data.startDate, data.endDate),
+		onSuccess: (res: any) => {
+			setAccountHistory(res.data);
+		},
+	});
+
 	const onSubmit = async (data: z.infer<typeof fullStatementSchema>) => {
-		console.log(data);
+		const formattedData = {
+			...data,
+			startDate: format(new Date(data.startDate), 'yyyy-MM-dd'),
+			endDate: format(new Date(data.endDate), 'yyyy-MM-dd'),
+		};
+
+		mutate(formattedData);
 	};
+
+	if (isLoading) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
 			<h2 className='text-2xl font-bold'>Full Statement</h2>
 
-			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 2</h3>
-				<p className='text-gray-600'>
-					{step === 1 && 'Select your account'}
-					{step === 2 && 'Choose the start and end dates'}
-				</p>
-			</div>
-
-			<Form {...methods}>
-				<form
-					onSubmit={handleSubmit(onSubmit)}
-					className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
-				>
-					{step === 1 && (
-						<FormField
-							control={control}
-							name='account'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Select Account</FormLabel>
-									<FormControl>
-										<Select
-											value={field.value}
-											onValueChange={(value) => field.onChange(value)}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder='Select account' />
-											</SelectTrigger>
-
-											<SelectContent>
-												<SelectItem value='account1'>Account 1</SelectItem>
-												<SelectItem value='account2'>Account 2</SelectItem>
-												<SelectItem value='account3'>Account 3</SelectItem>
-											</SelectContent>
-										</Select>
-									</FormControl>
-
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					)}
-
-					{step === 2 && (
-						<>
-							<FormField
-								control={control}
-								name='startDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col w-full'>
-										<FormLabel>Start Date</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant={'outline'}
-														className={cn(
-															'pl-3 text-left font-normal',
-															!field.value && 'text-muted-foreground'
-														)}
-													>
-														{field.value ? (
-															format(field.value, 'PPP')
-														) : (
-															<span>Pick a date</span>
-														)}
-														<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-
-											<PopoverContent className='w-auto p-0' align='start'>
-												<Calendar
-													mode='single'
-													selected={field.value}
-													onSelect={field.onChange}
-													initialFocus
-												/>
-											</PopoverContent>
-										</Popover>
-
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={control}
-								name='endDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col w-full'>
-										<FormLabel>End Date</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant={'outline'}
-														className={cn(
-															'pl-3 text-left font-normal',
-															!field.value && 'text-muted-foreground'
-														)}
-													>
-														{field.value ? (
-															format(field.value, 'PPP')
-														) : (
-															<span>Pick a date</span>
-														)}
-														<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-
-											<PopoverContent className='w-auto p-0' align='start'>
-												<Calendar
-													mode='single'
-													selected={field.value}
-													onSelect={field.onChange}
-													initialFocus
-												/>
-											</PopoverContent>
-										</Popover>
-
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</>
-					)}
-
-					<div className='flex justify-between'>
-						{step > 1 && (
-							<Button type='button' onClick={previousStep} variant='outline'>
-								Back
-							</Button>
-						)}
-
-						{step === 1 && (
-							<Button type='button' className='ml-auto' onClick={nextStep}>
-								Next
-							</Button>
-						)}
-
-						{step === 2 && (
-							<Button type='submit' className='ml-auto'>
-								Submit
-							</Button>
-						)}
+			{accountHistory.length === 0 && (
+				<>
+					<div className='w-full text-center mb-4'>
+						<h3 className='text-lg'>Step {step} of 2</h3>
+						<p className='text-gray-600'>
+							{step === 1 && 'Select your account'}
+							{step === 2 && 'Choose the start and end dates'}
+						</p>
 					</div>
-				</form>
-			</Form>
+
+					<Form {...methods}>
+						<form
+							onSubmit={handleSubmit(onSubmit)}
+							className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
+						>
+							{step === 1 && (
+								<FormField
+									control={control}
+									name='account'
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Select Account</FormLabel>
+											<FormControl>
+												<Select
+													value={field.value}
+													onValueChange={field.onChange}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder='Select account' />
+													</SelectTrigger>
+
+													<SelectContent>
+														{data?.data?.map((account: any, index: number) => (
+															<SelectItem
+																key={index}
+																value={account.accountNumber}
+															>
+																{account.accountNumber} -{' '}
+																{formatCurrency(account.bookBalance)}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormControl>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
+
+							{step === 2 && (
+								<>
+									<FormField
+										control={control}
+										name='startDate'
+										render={({ field }) => (
+											<FormItem className='flex flex-col w-full'>
+												<FormLabel>Start Date</FormLabel>
+
+												<Input
+													{...field}
+													type='date'
+													placeholder='Enter your start date'
+												/>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<FormField
+										control={control}
+										name='endDate'
+										render={({ field }) => (
+											<FormItem className='flex flex-col w-full'>
+												<FormLabel>End Date</FormLabel>
+
+												<Input
+													{...field}
+													type='date'
+													placeholder='Enter your end date'
+												/>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</>
+							)}
+
+							<div className='flex justify-between'>
+								{step > 1 && (
+									<Button
+										type='button'
+										onClick={previousStep}
+										variant='outline'
+									>
+										Back
+									</Button>
+								)}
+
+								{step === 1 && (
+									<Button type='button' className='ml-auto' onClick={nextStep}>
+										Next
+									</Button>
+								)}
+
+								{step === 2 && (
+									<Button
+										type='submit'
+										className='ml-auto'
+										disabled={isPending}
+									>
+										Submit
+									</Button>
+								)}
+							</div>
+						</form>
+					</Form>
+				</>
+			)}
+
+			{accountHistory.length > 0 && (
+				<div className='w-full text-center mb-4'>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Account Number</TableHead>
+								<TableHead>Transaction Date</TableHead>
+								<TableHead>Transaction Amount</TableHead>
+								<TableHead>Description</TableHead>
+							</TableRow>
+						</TableHeader>
+
+						<TableBody className='text-left'>
+							{accountHistory.map((account: any, index: number) => (
+								<TableRow key={index}>
+									<TableCell>{account.COD_ACCT_NO}</TableCell>
+									<TableCell>{account.DAT_TXN}</TableCell>
+									<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
+									<TableCell>{account.trandesc}</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</div>
+			)}
 		</main>
 	);
 }

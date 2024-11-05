@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
@@ -60,7 +62,7 @@ export default function InternalTransfers() {
 	const internalTransferSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		dailyTransferLimit: z
-			.string()
+			.number()
 			.min(1, 'Please enter your daily transfer limit'),
 		destinationAccount: z
 			.string()
@@ -71,7 +73,7 @@ export default function InternalTransfers() {
 
 	const defaultValues = {
 		sourceAccount: '',
-		dailyTransferLimit: '',
+		dailyTransferLimit: 0,
 		destinationAccount: '',
 		amount: '',
 		token: '',
@@ -83,7 +85,22 @@ export default function InternalTransfers() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger, getValues } = methods;
+	const { handleSubmit, control, trigger, getValues, setValue, watch } =
+		methods;
+
+	// get daily transfer limit with source account
+	useEffect(() => {
+		if (watch('sourceAccount').length >= 10) {
+			setValue(
+				'dailyTransferLimit',
+
+				userData?.pLimitsObject?.LimitsObject?.find(
+					(limit: any) =>
+						limit.Accountnumber.toString() === watch('sourceAccount')
+				)?.InternalXferLimit as number
+			);
+		}
+	}, [setValue, userData, watch('sourceAccount')]);
 
 	const nextStep = async () => {
 		const fields = {
@@ -168,6 +185,7 @@ export default function InternalTransfers() {
 											<Input
 												{...field}
 												placeholder='Enter your daily transfer limit'
+												disabled
 											/>
 										</FormControl>
 										<FormMessage />

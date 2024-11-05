@@ -49,7 +49,7 @@ export const description =
 
 const LoginForm = () => {
 	// const router = useRouter();
-	const { login } = appStore();
+	const { login, setAccessCode } = appStore();
 
 	const { toast } = useToast();
 
@@ -74,8 +74,11 @@ const LoginForm = () => {
 	});
 
 	useEffect(() => {
-		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
-	}, []);
+		getAccessCode().then((res: any) => {
+			setAccessCodeChars(res.data);
+			setAccessCode(res.data);
+		});
+	}, [setAccessCode]);
 
 	useEffect(() => {
 		async function fetchSessionID() {

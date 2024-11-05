@@ -59,7 +59,7 @@ import {
 } from '@/services/api';
 
 export default function ThirdPartyTransfers() {
-	const { userData } = appStore();
+	const { userData, accessCode } = appStore();
 
 	const [step, setStep] = useState(1);
 	const [bankCategory, setBankCategory] = useState<'2-4' | '7-9' | '10-11'>(
@@ -121,7 +121,7 @@ export default function ThirdPartyTransfers() {
 	const thirdPartyTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		dailyTransferLimit: z
-			.string()
+			.number()
 			.min(1, 'Please enter your daily transfer limit'),
 		beneficiary: z.string().min(1, 'Please enter your beneficiary'),
 		bankCode: z.string().min(1, 'Please enter your bank code'),
@@ -138,7 +138,7 @@ export default function ThirdPartyTransfers() {
 
 	const defaultValues = {
 		sourceAccount: '',
-		dailyTransferLimit: '',
+		dailyTransferLimit: 0,
 		beneficiary: '',
 		bankCode: '',
 		destinationAccountNumber: '',
@@ -156,6 +156,18 @@ export default function ThirdPartyTransfers() {
 
 	const { handleSubmit, control, trigger, getValues, setValue, watch } =
 		methods;
+
+	useEffect(() => {
+		if (watch('sourceAccount').length >= 10) {
+			setValue(
+				'dailyTransferLimit',
+				userData?.pLimitsObject?.LimitsObject?.find(
+					(limit: any) =>
+						limit.Accountnumber.toString() === watch('sourceAccount')
+				)?.ThirdPartyLimit as number
+			);
+		}
+	}, [setValue, userData, watch('sourceAccount')]);
 
 	// name enquiry
 	const { data: nameEnquiry, isLoading: isLoadingNameEnquiry } = useQuery({
@@ -183,8 +195,6 @@ export default function ThirdPartyTransfers() {
 		}
 	}, [watch('sourceAccount'), userData]);
 
-	console.log(userData);
-
 	const nextStep = async () => {
 		const fields = {
 			1: ['sourceAccount', 'dailyTransferLimit'],
@@ -209,6 +219,13 @@ export default function ThirdPartyTransfers() {
 			DestinationInstitutionCode: data.bankCode,
 			BeneficiaryAccountNumber: data.destinationAccountNumber,
 			BeneficiaryAccountName: data.destinationAccountName,
+			theTree: {
+				Char1: accessCode?.Char1,
+				Char2: accessCode?.Char2,
+				Char3: accessCode?.Char3,
+				bool: accessCode?.bool,
+				retMsg: accessCode?.retMsg,
+			},
 		};
 
 		console.log('Processing transfer:', newData);
@@ -288,6 +305,7 @@ export default function ThirdPartyTransfers() {
 											<Input
 												{...field}
 												placeholder='Enter your daily transfer limit'
+												disabled
 											/>
 										</FormControl>
 										<FormMessage />

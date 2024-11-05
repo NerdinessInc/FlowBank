@@ -2,7 +2,7 @@
 
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -59,6 +59,9 @@ export default function InterBankLocalTransfers() {
 
 	const interbankLocalTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
+		dailyTransferLimit: z
+			.number()
+			.min(1, 'Please enter your daily transfer limit'),
 		destinationBank: z.string().min(1, 'Please select your destination bank'),
 		beneficiaryAccount: z.string().min(1, 'Please enter beneficiary account'),
 		beneficiaryName: z.string().min(1, 'Please enter beneficiary name'),
@@ -69,6 +72,7 @@ export default function InterBankLocalTransfers() {
 
 	const defaultValues = {
 		sourceAccount: '',
+		dailyTransferLimit: 0,
 		destinationBank: '',
 		beneficiaryAccount: '',
 		beneficiaryName: '',
@@ -90,7 +94,20 @@ export default function InterBankLocalTransfers() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger, getValues } = methods;
+	const { handleSubmit, control, trigger, getValues, setValue, watch } =
+		methods;
+
+	useEffect(() => {
+		if (watch('sourceAccount').length >= 10) {
+			setValue(
+				'dailyTransferLimit',
+				userData?.pLimitsObject?.LimitsObject?.find(
+					(limit: any) =>
+						limit.Accountnumber.toString() === watch('sourceAccount')
+				)?.InterBankLimit as number
+			);
+		}
+	}, [setValue, userData, watch('sourceAccount')]);
 
 	const nextStep = async () => {
 		const fields = {
@@ -141,31 +158,57 @@ export default function InterBankLocalTransfers() {
 					className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
 				>
 					{step === 1 && (
-						<FormField
-							control={control}
-							name='sourceAccount'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Source Account</FormLabel>
-									<FormControl>
-										<Select onValueChange={field.onChange} value={field.value}>
-											<SelectTrigger>
-												<SelectValue placeholder='Select Source Account' />
-											</SelectTrigger>
-											<SelectContent>
-												{data?.data?.map((account: any, index: number) => (
-													<SelectItem key={index} value={account.accountNumber}>
-														{account.accountNumber} -{' '}
-														{formatCurrency(account.bookBalance)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+						<>
+							<FormField
+								control={control}
+								name='sourceAccount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Source Account</FormLabel>
+										<FormControl>
+											<Select
+												onValueChange={field.onChange}
+												value={field.value}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Source Account' />
+												</SelectTrigger>
+												<SelectContent>
+													{data?.data?.map((account: any, index: number) => (
+														<SelectItem
+															key={index}
+															value={account.accountNumber}
+														>
+															{account.accountNumber} -{' '}
+															{formatCurrency(account.bookBalance)}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={control}
+								name='dailyTransferLimit'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Daily Transfer Limit</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder='Enter your daily transfer limit'
+												disabled
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
 					)}
 
 					{step === 2 && (

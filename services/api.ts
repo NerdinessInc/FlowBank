@@ -724,3 +724,115 @@ export const doNIPTransferReversal = async (userRec: any, values: any) => {
 		};
 	}
 };
+
+// account history details
+export const getAccountHistory = async (
+	acctno: string,
+	startdate: string,
+	enddate: string
+) => {
+	const body = `
+    <ReturnHistDetails xmlns="http://con.Ibplc.org/">
+      <acctno>${acctno}</acctno>
+      <startdate>${startdate}</startdate>
+      <enddate>${enddate}</enddate>
+    </ReturnHistDetails>`
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['ReturnHistDetailsResult'];
+
+		const parseResult = result?.rs?.string?.slice(1).map((account: string) => {
+			const [
+				COD_ACCT_NO,
+				DAT_TXN,
+				DAT_VALUE,
+				AMT_TXN,
+				CheckNo,
+				trandesc,
+				TXT_TXN_DESC,
+				tranCode,
+				COD_DRCR,
+				userid,
+				postseq,
+				NAM_CUST_FULL,
+				mobile,
+				address,
+				Ref_num,
+				balance,
+				RUNNING_BAL,
+				DEBIT_AMT,
+				CREDIT_AMT,
+				OPENING_BAL,
+				CLOSING_BAL,
+				pSTART_DATE,
+				END_DATE,
+				TXT_CUSTADR_ADD1,
+				TXT_CUSTADR_ADD2,
+				TXT_CUSTADR_ADD3,
+				NAM_CUST_SHRT,
+				COD_ACCT_TITLE,
+				COD_PROD,
+				COD_CC_BRN,
+				COD_CC_BRN_TXN,
+				RAT_INT_RD,
+				NAM_PRODUCT,
+				NAM_BRANCH,
+			] = account.split('|');
+
+			return {
+				COD_ACCT_NO,
+				DAT_TXN,
+				DAT_VALUE,
+				AMT_TXN,
+				CheckNo,
+				trandesc,
+				TXT_TXN_DESC,
+				tranCode,
+				COD_DRCR,
+				userid,
+				postseq,
+				NAM_CUST_FULL,
+				mobile,
+				address,
+				Ref_num,
+				balance,
+				RUNNING_BAL,
+				DEBIT_AMT,
+				CREDIT_AMT,
+				OPENING_BAL,
+				CLOSING_BAL,
+				pSTART_DATE,
+				END_DATE,
+				TXT_CUSTADR_ADD1,
+				TXT_CUSTADR_ADD2,
+				TXT_CUSTADR_ADD3,
+				NAM_CUST_SHRT,
+				COD_ACCT_TITLE,
+				COD_PROD,
+				COD_CC_BRN,
+				COD_CC_BRN_TXN,
+				RAT_INT_RD,
+				NAM_PRODUCT,
+				NAM_BRANCH,
+			};
+		});
+
+		return {
+			success: true,
+			data: parseResult,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage:
+				'Failed to retrieve account history details. Please try again.',
+		};
+	}
+};
