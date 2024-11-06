@@ -9,9 +9,12 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // components
-import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/Loader';
+import { Paginate } from '@/components/Paginate';
+
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
 import {
 	Form,
 	FormControl,
@@ -20,6 +23,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
+
 import {
 	Select,
 	SelectContent,
@@ -27,6 +31,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+
 import {
 	Table,
 	TableBody,
@@ -51,6 +56,8 @@ export default function FullStatement() {
 
 	const [step, setStep] = useState(1);
 	const [accountHistory, setAccountHistory] = useState<any[]>([]);
+
+	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ['full-statement'],
@@ -103,6 +110,7 @@ export default function FullStatement() {
 			getAccountHistory(data.account, data.startDate, data.endDate),
 		onSuccess: (res: any) => {
 			setAccountHistory(res.data);
+			setItems(res.data.slice(0, 10));
 		},
 	});
 
@@ -114,6 +122,14 @@ export default function FullStatement() {
 		};
 
 		mutate(formattedData);
+	};
+
+	const handlePageChange = (page: number) => {
+		const offset = (page - 1) * 10;
+
+		const newItems = accountHistory?.slice(offset, offset + 10);
+
+		setItems(newItems);
 	};
 
 	if (isLoading) return <Loading />;
@@ -245,27 +261,57 @@ export default function FullStatement() {
 
 			{accountHistory.length > 0 && (
 				<div className='w-full text-center mb-4'>
+					<div className='w-full flex justify-between my-6'>
+						<div className='flex flex-col items-start'>
+							<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
+							<p>
+								Opening Balance: {formatCurrency(accountHistory[0].OPENING_BAL)}
+							</p>
+							<p>
+								Available Balance:{' '}
+								{formatCurrency(accountHistory[0].CLOSING_BAL)}
+							</p>
+							<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
+							<p>
+								Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
+								{accountHistory[0].END_DATE}
+							</p>
+							<p>Total Transactions: {accountHistory.length}</p>
+						</div>
+						<div className='flex flex-col items-end'>
+							<p>{accountHistory[0].NAM_CUST_FULL}</p>
+							<p>{accountHistory[0].address}</p>
+						</div>
+					</div>
+
 					<Table>
 						<TableHeader>
 							<TableRow>
 								<TableHead>Account Number</TableHead>
 								<TableHead>Transaction Date</TableHead>
 								<TableHead>Transaction Amount</TableHead>
-								<TableHead>Description</TableHead>
+								<TableHead>Narration</TableHead>
 							</TableRow>
 						</TableHeader>
 
 						<TableBody className='text-left'>
-							{accountHistory.map((account: any, index: number) => (
+							{items.map((account: any, index: number) => (
 								<TableRow key={index}>
 									<TableCell>{account.COD_ACCT_NO}</TableCell>
 									<TableCell>{account.DAT_TXN}</TableCell>
 									<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
-									<TableCell>{account.trandesc}</TableCell>
+									<TableCell>{account.TXT_TXN_DESC}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
 					</Table>
+
+					<div className='float-right my-3'>
+						<Paginate
+							totalItems={accountHistory?.length}
+							onPageChange={handlePageChange}
+						/>
+					</div>
 				</div>
 			)}
 		</main>

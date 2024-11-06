@@ -11,6 +11,7 @@ import { z } from 'zod';
 // components
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/Loader';
+import { Paginate } from '@/components/Paginate';
 import { Input } from '@/components/ui/input';
 import {
 	Form,
@@ -51,6 +52,7 @@ export default function DRListing() {
 
 	const [step, setStep] = useState(1);
 	const [accountHistory, setAccountHistory] = useState<any[]>([]);
+	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ['dr-listing'],
@@ -103,19 +105,25 @@ export default function DRListing() {
 			getAccountHistory(data.account, data.startDate, data.endDate),
 		onSuccess: (res: any) => {
 			const debitData = res.data.filter((data: any) => data.COD_DRCR === 'DR');
-
 			setAccountHistory(debitData);
+			setItems(debitData.slice(0, 10));
 		},
 	});
 
 	const onSubmit = async (data: z.infer<typeof drListingSchema>) => {
 		const formattedData = {
 			...data,
-			startDate: format(data.startDate, 'yyyy-MM-dd'),
-			endDate: format(data.endDate, 'yyyy-MM-dd'),
+			startDate: format(new Date(data.startDate), 'yyyy-MM-dd'),
+			endDate: format(new Date(data.endDate), 'yyyy-MM-dd'),
 		};
 
 		mutate(formattedData);
+	};
+
+	const handlePageChange = (page: number) => {
+		const offset = (page - 1) * 10;
+		const newItems = accountHistory?.slice(offset, offset + 10);
+		setItems(newItems);
 	};
 
 	if (isLoading) return <Loading />;
@@ -249,27 +257,56 @@ export default function DRListing() {
 
 			{accountHistory.length > 0 && (
 				<div className='w-full text-center mb-4'>
+					<div className='w-full flex justify-between my-6'>
+						<div className='flex flex-col items-start'>
+							<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
+							<p>
+								Opening Balance: {formatCurrency(accountHistory[0].OPENING_BAL)}
+							</p>
+							<p>
+								Available Balance:{' '}
+								{formatCurrency(accountHistory[0].CLOSING_BAL)}
+							</p>
+							<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
+							<p>
+								Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
+								{accountHistory[0].END_DATE}
+							</p>
+							<p>Total Transactions: {accountHistory.length}</p>
+						</div>
+						<div className='flex flex-col items-end'>
+							<p>{accountHistory[0].NAM_CUST_FULL}</p>
+							<p>{accountHistory[0].address}</p>
+						</div>
+					</div>
+
 					<Table>
 						<TableHeader>
 							<TableRow>
 								<TableHead>Account Number</TableHead>
 								<TableHead>Transaction Date</TableHead>
 								<TableHead>Transaction Amount</TableHead>
-								<TableHead>Description</TableHead>
+								<TableHead>Narration</TableHead>
 							</TableRow>
 						</TableHeader>
-
 						<TableBody className='text-left'>
-							{accountHistory.map((account: any, index: number) => (
+							{items.map((account: any, index: number) => (
 								<TableRow key={index}>
 									<TableCell>{account.COD_ACCT_NO}</TableCell>
 									<TableCell>{account.DAT_TXN}</TableCell>
 									<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
-									<TableCell>{account.trandesc}</TableCell>
+									<TableCell>{account.TXT_TXN_DESC}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
 					</Table>
+
+					<div className='float-right my-3'>
+						<Paginate
+							totalItems={accountHistory?.length}
+							onPageChange={handlePageChange}
+						/>
+					</div>
 				</div>
 			)}
 		</main>
