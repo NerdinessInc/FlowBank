@@ -2,18 +2,28 @@
 
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 // form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// icons
+import { Save } from 'lucide-react';
+
+// query
+import { useMutation, useQuery } from '@tanstack/react-query';
+
 // components
 import { Loading } from '@/components/Loader';
 import { Paginate } from '@/components/Paginate';
+import { StatementPDF } from '@/components/StatementPDF';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import {
 	Form,
@@ -25,14 +35,6 @@ import {
 } from '@/components/ui/form';
 
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
-
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -40,6 +42,14 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 
 // utils
 import { formatCurrency } from '@/utils/formatNumber';
@@ -49,14 +59,11 @@ import { appStore } from '@/store';
 
 // services
 import { getAccountHistory, ReturnAcctDetails2 } from '@/services/api';
-import { useMutation, useQuery } from '@tanstack/react-query';
 
 export default function FullStatement() {
 	const { userData } = appStore();
 
-	const [step, setStep] = useState(1);
 	const [accountHistory, setAccountHistory] = useState<any[]>([]);
-
 	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
@@ -92,18 +99,7 @@ export default function FullStatement() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger } = methods;
-
-	const nextStep = async () => {
-		const isValid = await trigger('account');
-		if (isValid) {
-			setStep(2);
-		}
-	};
-
-	const previousStep = () => {
-		setStep(1);
-	};
+	const { handleSubmit, control } = methods;
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: (data: any) =>
@@ -113,6 +109,12 @@ export default function FullStatement() {
 			setItems(res.data.slice(0, 10));
 		},
 	});
+
+	const handlePageChange = (page: number) => {
+		const offset = (page - 1) * 10;
+		const newItems = accountHistory?.slice(offset, offset + 10);
+		setItems(newItems);
+	};
 
 	const onSubmit = async (data: z.infer<typeof fullStatementSchema>) => {
 		const formattedData = {
@@ -124,14 +126,6 @@ export default function FullStatement() {
 		mutate(formattedData);
 	};
 
-	const handlePageChange = (page: number) => {
-		const offset = (page - 1) * 10;
-
-		const newItems = accountHistory?.slice(offset, offset + 10);
-
-		setItems(newItems);
-	};
-
 	if (isLoading) return <Loading />;
 
 	return (
@@ -140,120 +134,84 @@ export default function FullStatement() {
 
 			{accountHistory.length === 0 && (
 				<>
-					<div className='w-full text-center mb-4'>
-						<h3 className='text-lg'>Step {step} of 2</h3>
-						<p className='text-gray-600'>
-							{step === 1 && 'Select your account'}
-							{step === 2 && 'Choose the start and end dates'}
-						</p>
-					</div>
-
 					<Form {...methods}>
 						<form
 							onSubmit={handleSubmit(onSubmit)}
 							className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
 						>
-							{step === 1 && (
-								<FormField
-									control={control}
-									name='account'
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Select Account</FormLabel>
-											<FormControl>
-												<Select
-													value={field.value}
-													onValueChange={field.onChange}
-												>
-													<SelectTrigger>
-														<SelectValue placeholder='Select account' />
-													</SelectTrigger>
+							<FormField
+								control={control}
+								name='account'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Select Account</FormLabel>
+										<FormControl>
+											<Select
+												value={field.value}
+												onValueChange={field.onChange}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select account' />
+												</SelectTrigger>
 
-													<SelectContent>
-														{data?.data?.map((account: any, index: number) => (
-															<SelectItem
-																key={index}
-																value={account.accountNumber}
-															>
-																{account.accountNumber} -{' '}
-																{formatCurrency(account.bookBalance)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</FormControl>
+												<SelectContent>
+													{data?.data?.map((account: any, index: number) => (
+														<SelectItem
+															key={index}
+															value={account.accountNumber}
+														>
+															{account.accountNumber} -{' '}
+															{formatCurrency(account.bookBalance)}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormControl>
 
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
-
-							{step === 2 && (
-								<>
-									<FormField
-										control={control}
-										name='startDate'
-										render={({ field }) => (
-											<FormItem className='flex flex-col w-full'>
-												<FormLabel>Start Date</FormLabel>
-
-												<Input
-													{...field}
-													type='date'
-													placeholder='Enter your start date'
-												/>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										control={control}
-										name='endDate'
-										render={({ field }) => (
-											<FormItem className='flex flex-col w-full'>
-												<FormLabel>End Date</FormLabel>
-
-												<Input
-													{...field}
-													type='date'
-													placeholder='Enter your end date'
-												/>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</>
-							)}
-
-							<div className='flex justify-between'>
-								{step > 1 && (
-									<Button
-										type='button'
-										onClick={previousStep}
-										variant='outline'
-									>
-										Back
-									</Button>
+										<FormMessage />
+									</FormItem>
 								)}
+							/>
 
-								{step === 1 && (
-									<Button type='button' className='ml-auto' onClick={nextStep}>
-										Next
-									</Button>
-								)}
+							<FormField
+								control={control}
+								name='startDate'
+								render={({ field }) => (
+									<FormItem className='flex flex-col w-full'>
+										<FormLabel>Start Date</FormLabel>
 
-								{step === 2 && (
-									<Button
-										type='submit'
-										className='ml-auto'
-										disabled={isPending}
-									>
-										Submit
-									</Button>
+										<Input
+											{...field}
+											placeholder='Enter your start date'
+											type='date'
+										/>
+
+										<FormMessage />
+									</FormItem>
 								)}
-							</div>
+							/>
+
+							<FormField
+								control={control}
+								name='endDate'
+								render={({ field }) => (
+									<FormItem className='flex flex-col w-full'>
+										<FormLabel>End Date</FormLabel>
+
+										<Input
+											{...field}
+											placeholder='Enter your end date'
+											type='date'
+										/>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<Button type='submit' className='w-full' disabled={isPending}>
+								Submit
+							</Button>
 						</form>
 					</Form>
 				</>
@@ -261,50 +219,70 @@ export default function FullStatement() {
 
 			{accountHistory.length > 0 && (
 				<div className='w-full text-center mb-4'>
-					<div className='w-full flex justify-between my-6'>
-						<div className='flex flex-col items-start'>
-							<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
-							<p>
-								Opening Balance: {formatCurrency(accountHistory[0].OPENING_BAL)}
-							</p>
-							<p>
-								Available Balance:{' '}
-								{formatCurrency(accountHistory[0].CLOSING_BAL)}
-							</p>
-							<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
-							<p>
-								Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
-								{accountHistory[0].END_DATE}
-							</p>
-							<p>Total Transactions: {accountHistory.length}</p>
-						</div>
-						<div className='flex flex-col items-end'>
-							<p>{accountHistory[0].NAM_CUST_FULL}</p>
-							<p>{accountHistory[0].address}</p>
-						</div>
-					</div>
+					<Card>
+						<CardHeader>
+							<CardTitle>Statement Details</CardTitle>
 
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Account Number</TableHead>
-								<TableHead>Transaction Date</TableHead>
-								<TableHead>Transaction Amount</TableHead>
-								<TableHead>Narration</TableHead>
-							</TableRow>
-						</TableHeader>
+							<PDFDownloadLink
+								document={<StatementPDF accountHistory={accountHistory} />}
+								fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
+							>
+								<Button className='flex gap-2 items-center font-bold'>
+									Download
+									<Save className='h-4 w-4' />
+								</Button>
+							</PDFDownloadLink>
+						</CardHeader>
 
-						<TableBody className='text-left'>
-							{items.map((account: any, index: number) => (
-								<TableRow key={index}>
-									<TableCell>{account.COD_ACCT_NO}</TableCell>
-									<TableCell>{account.DAT_TXN}</TableCell>
-									<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
-									<TableCell>{account.TXT_TXN_DESC}</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+						<CardContent>
+							<div className='w-full flex justify-between my-6'>
+								<div className='flex flex-col items-start'>
+									<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
+									<p>
+										Opening Balance:{' '}
+										{formatCurrency(accountHistory[0].OPENING_BAL)}
+									</p>
+									<p>
+										Available Balance:{' '}
+										{formatCurrency(accountHistory[0].CLOSING_BAL)}
+									</p>
+									<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
+									<p>
+										Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
+										{accountHistory[0].END_DATE}
+									</p>
+									<p>Total Transactions: {accountHistory.length}</p>
+								</div>
+
+								<div className='flex flex-col items-end'>
+									<p>{accountHistory[0].NAM_CUST_FULL}</p>
+									<p>{accountHistory[0].address}</p>
+								</div>
+							</div>
+
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Account Number</TableHead>
+										<TableHead>Transaction Date</TableHead>
+										<TableHead>Transaction Amount</TableHead>
+										<TableHead>Narration</TableHead>
+									</TableRow>
+								</TableHeader>
+
+								<TableBody className='text-left'>
+									{items.map((account: any, index: number) => (
+										<TableRow key={index}>
+											<TableCell>{account.COD_ACCT_NO}</TableCell>
+											<TableCell>{account.DAT_TXN}</TableCell>
+											<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
+											<TableCell>{account.TXT_TXN_DESC}</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
 
 					<div className='float-right my-3'>
 						<Paginate

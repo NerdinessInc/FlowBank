@@ -56,6 +56,7 @@ import {
 	returnNameEnquiry,
 	getAccessCode,
 	ReturngetOTUP,
+	returnPutXrefDetails,
 } from '@/services/api';
 
 export default function ThirdPartyTransfers() {
@@ -112,9 +113,9 @@ export default function ThirdPartyTransfers() {
 
 	// send otp
 	const { mutate, isPending } = useMutation({
-		mutationFn: (data: any) => ReturngetOTUP(data.userRec, data.values),
+		mutationFn: (data: any) => returnPutXrefDetails(data.userRec, data.values),
 		onSuccess: (res: any) => {
-			console.log(res);
+			console.log(res, 'hi');
 		},
 	});
 
@@ -134,6 +135,7 @@ export default function ThirdPartyTransfers() {
 		transferAmount: z.string().min(1, 'Please enter your transfer amount'),
 		transferCode: z.string().min(3, 'Please enter your transfer code'),
 		token: z.string().min(1, 'Please enter your Token'),
+		narration: z.string().min(1, 'Please enter your narration'),
 	});
 
 	const defaultValues = {
@@ -146,6 +148,7 @@ export default function ThirdPartyTransfers() {
 		transferAmount: '',
 		transferCode: '',
 		token: '',
+		narration: '',
 	};
 
 	const methods = useForm({
@@ -217,8 +220,15 @@ export default function ThirdPartyTransfers() {
 		const newData = {
 			...data,
 			DestinationInstitutionCode: data.bankCode,
-			BeneficiaryAccountNumber: data.destinationAccountNumber,
+			DestAcct: data.destinationAccountNumber,
 			BeneficiaryAccountName: data.destinationAccountName,
+			SessionId: sessionID,
+			Amount: data.transferAmount,
+			email: selectedAccount?.Email,
+			gsm: selectedAccount?.Gsm,
+			Narration: data.narration,
+			TransferCode: data.transferCode,
+			sendOption: notificationMode,
 			theTree: {
 				Char1: accessCode?.Char1,
 				Char2: accessCode?.Char2,
@@ -563,17 +573,32 @@ export default function ThirdPartyTransfers() {
 
 								<Button
 									type='button'
-									onClick={() =>
+									onClick={() => {
 										mutate({
 											userRec: userData?.userRec,
 											values: {
-												option: notificationMode,
-												sessionID,
+												DestinationInstitutionCode: getValues('bankCode'),
+												DestAcct: getValues('destinationAccountNumber'),
+												BeneficiaryAccountName: getValues(
+													'destinationAccountName'
+												),
+												SessionId: sessionID,
+												Amount: getValues('transferAmount'),
 												email: selectedAccount?.Email,
-												phone: selectedAccount?.Gsm,
+												gsm: selectedAccount?.Gsm,
+												Narration: getValues('narration'),
+												TransferCode: getValues('transferCode'),
+												sendOption: notificationMode,
+												theTree: {
+													Char1: accessCode?.Char1,
+													Char2: accessCode?.Char2,
+													Char3: accessCode?.Char3,
+													bool: accessCode?.bool,
+													retMsg: accessCode?.retMsg,
+												},
 											},
-										})
-									}
+										});
+									}}
 									variant='outline'
 									className='flex-1'
 									disabled={isPending}

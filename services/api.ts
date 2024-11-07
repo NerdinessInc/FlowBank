@@ -836,3 +836,121 @@ export const getAccountHistory = async (
 		};
 	}
 };
+
+export const returnPutXrefDetails = async (userRec: any, values: any) => {
+	const body = `
+    <ReturnPutXrefDetails xmlns="http://con.Ibplc.org/">
+      <pUserTrfToken>
+        <pSessionId>${values.SessionId}</pSessionId>
+        <NameEnquiryRef>${values.NameEnquiryRef}</NameEnquiryRef>
+        <DestinationInstitutionCode>${
+					values.DestinationInstitutionCode
+				}</DestinationInstitutionCode>
+        <ChannelCode>${values.ChannelCode}</ChannelCode>
+        <pInitTime>${userRec.pInitTime}</pInitTime>
+        <pTokValue>${userRec.pTokValue}</pTokValue>
+        <penqaccess>${userRec.PXfChar2}</penqaccess>
+        <pUname>${webClasses.encryptText(userRec.pUserName)}</pUname>
+        <pStatus>${userRec.pStatus}</pStatus>
+        <Pamount>${values.Amount}</Pamount>
+        <pTransRef>${userRec.pTransRef}</pTransRef>
+        <pTrfType>${userRec.pTrfType}</pTrfType>
+        <pTimeStamp>${userRec.pTimeStamp}</pTimeStamp>
+        <pGsmStatus>${userRec.pGsmStatus}</pGsmStatus>
+        <pUserEmail>${values.email}</pUserEmail>
+        <pUserGSM>${values.gsm}</pUserGSM>
+        <pSrcAcct>${values.SrcAcct}</pSrcAcct>
+        <OriginatorAccountName>${
+					values.OriginatorAccountName
+				}</OriginatorAccountName>
+        <OriginatorAccountNumber>${
+					values.OriginatorAccountNumber
+				}</OriginatorAccountNumber>
+        <OriginatorBankVerificationNumber>${
+					values.OriginatorBankVerificationNumber
+				}</OriginatorBankVerificationNumber>
+        <OriginatorKYCLevel>${values.OriginatorKYCLevel}</OriginatorKYCLevel>
+        <pDestAcct>${values.DestAcct}</pDestAcct>
+        <BeneficiaryAccountName>${
+					values.BeneficiaryAccountName
+				}</BeneficiaryAccountName>
+        <BeneficiaryAccountNumber>${
+					values.BeneficiaryAccountNumber
+				}</BeneficiaryAccountNumber>
+        <BeneficiaryBankVerificationNumber>${
+					values.BeneficiaryBankVerificationNumber
+				}</BeneficiaryBankVerificationNumber>
+        <BeneficiaryKYCLevel>${values.BeneficiaryKYCLevel}</BeneficiaryKYCLevel>
+        <TransactionLocation>${values.TransactionLocation}</TransactionLocation>
+        <pFullName>${userRec.pFullName}</pFullName>
+        <Narration>${values.Narration}</Narration>
+        <PaymentReference>${values.PaymentReference}</PaymentReference>
+        <retVal>${values.retVal}</retVal>
+        <retMsg>${values.retMsg}</retMsg>
+        <theTree>
+          <Char1>${values.theTree.Char1}</Char1>
+          <Char2>${values.theTree.Char2}</Char2>
+          <Char3>${values.theTree.Char3}</Char3>
+          <bool>${values.theTree.bool}</bool>
+          <retMsg>${values.theTree.retMsg}</retMsg>
+          <cAC>${values.theTree.cAC}</cAC>
+        </theTree>
+        <AcAc>${webClasses.encryptText(values.TransferCode)}</AcAc>
+        <pstatusLocal>${userRec.pstatusLocal}</pstatusLocal>
+        <pstatusIntBank>${userRec.pstatusIntBank}</pstatusIntBank>
+        <pmsgString>${userRec.pmsgString}</pmsgString>
+        <pDestAcctIntBnk>${userRec.pDestAcctIntBnk}</pDestAcctIntBnk>
+        <pDestBenefIntBnk>${userRec.pDestBenefIntBnk}</pDestBenefIntBnk>
+        <pDestBankCode>${userRec.pDestBankCode}</pDestBankCode>
+        <psendOptions>${values.sendOption}</psendOptions>
+        <pBillPaymentRec>
+          <pBillID>${userRec.pBillPaymentRec.pBillID}</pBillID>
+          <pPlatformName>${
+						userRec.pBillPaymentRec.pPlatformName
+					}</pPlatformName>
+          <pBillRef1>${userRec.pBillPaymentRec.pBillRef1}</pBillRef1>
+          <pBillRef2>${userRec.pBillPaymentRec.pBillRef2}</pBillRef2>
+          <pBillRef3>${userRec.pBillPaymentRec.pBillRef3}</pBillRef3>
+          <pCustName>${userRec.pBillPaymentRec.pCustName}</pCustName>
+          <pAcctTitle>${userRec.pBillPaymentRec.pAcctTitle}</pAcctTitle>
+          <pSourceAcct>${userRec.pBillPaymentRec.pSourceAcct}</pSourceAcct>
+          <pPayeeAcct>${userRec.pBillPaymentRec.pPayeeAcct}</pPayeeAcct>
+          <pBillMonth>${userRec.pBillPaymentRec.pBillMonth}</pBillMonth>
+          <pBillYear>${userRec.pBillPaymentRec.pBillYear}</pBillYear>
+          <pBillStartDt>${userRec.pBillPaymentRec.pBillStartDt}</pBillStartDt>
+          <pBillEndDt>${userRec.pBillPaymentRec.pBillEndDt}</pBillEndDt>
+          <pTokenRefId>${userRec.pBillPaymentRec.pTokenRefId}</pTokenRefId>
+          <pBillPayed>${userRec.pBillPaymentRec.pBillPayed}</pBillPayed>
+          <pBillAmount>${userRec.pBillPaymentRec.pBillAmount}</pBillAmount>
+          <pDB>${userRec.pBillPaymentRec.pDB}</pDB>
+          <pEnqAcess>${userRec.pBillPaymentRec.pEnqAcess}</pEnqAcess>
+          <pUserName>${userRec.pBillPaymentRec.pUserName}</pUserName>
+        </pBillPaymentRec>
+      </pUserTrfToken>
+    </ReturnPutXrefDetails>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		const result = data['ReturnPutXrefDetailsResult'];
+
+		console.log(result);
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage:
+				'Failed to process cross-reference details. Please try again.',
+		};
+	}
+};

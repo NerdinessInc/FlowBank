@@ -2,11 +2,15 @@
 
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 // form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+// icons
+import { Save } from 'lucide-react';
 
 // query
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -14,8 +18,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 // components
 import { Loading } from '@/components/Loader';
 import { Paginate } from '@/components/Paginate';
+import { StatementPDF } from '@/components/StatementPDF';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import {
 	Form,
 	FormControl,
@@ -24,6 +33,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
+
 import {
 	Table,
 	TableBody,
@@ -32,6 +42,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+
 import {
 	Select,
 	SelectContent,
@@ -52,7 +63,6 @@ import { getAccountHistory, ReturnAcctDetails2 } from '@/services/api';
 export default function CRListing() {
 	const { userData } = appStore();
 
-	const [step, setStep] = useState(1);
 	const [accountHistory, setAccountHistory] = useState<any[]>([]);
 	const [items, setItems] = useState<any[]>([]);
 
@@ -89,18 +99,7 @@ export default function CRListing() {
 		mode: 'onChange',
 	});
 
-	const { handleSubmit, control, trigger } = methods;
-
-	const nextStep = async () => {
-		const isValid = await trigger('account');
-		if (isValid) {
-			setStep(2);
-		}
-	};
-
-	const previousStep = () => {
-		setStep(1);
-	};
+	const { handleSubmit, control } = methods;
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: (data: any) =>
@@ -135,173 +134,147 @@ export default function CRListing() {
 			<h2 className='text-2xl font-bold'>CR Listing</h2>
 
 			{accountHistory.length === 0 && (
-				<>
-					<div className='w-full text-center mb-4'>
-						<h3 className='text-lg'>Step {step} of 2</h3>
-						<p className='text-gray-600'>
-							{step === 1 && 'Select your account'}
-							{step === 2 && 'Choose the start and end dates'}
-						</p>
-					</div>
+				<Form {...methods}>
+					<form
+						onSubmit={handleSubmit(onSubmit)}
+						className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
+					>
+						<FormField
+							control={control}
+							name='account'
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Source Account</FormLabel>
+									<FormControl>
+										<Select onValueChange={field.onChange} value={field.value}>
+											<SelectTrigger>
+												<SelectValue placeholder='Select Source Account' />
+											</SelectTrigger>
+											<SelectContent>
+												{data?.data?.map((account: any, index: number) => (
+													<SelectItem key={index} value={account.accountNumber}>
+														{account.accountNumber} -{' '}
+														{formatCurrency(account.bookBalance)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</FormControl>
 
-					<Form {...methods}>
-						<form
-							onSubmit={handleSubmit(onSubmit)}
-							className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
-						>
-							{step === 1 && (
-								<FormField
-									control={control}
-									name='account'
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Source Account</FormLabel>
-											<FormControl>
-												<Select
-													onValueChange={field.onChange}
-													value={field.value}
-												>
-													<SelectTrigger>
-														<SelectValue placeholder='Select Source Account' />
-													</SelectTrigger>
-													<SelectContent>
-														{data?.data?.map((account: any, index: number) => (
-															<SelectItem
-																key={index}
-																value={account.accountNumber}
-															>
-																{account.accountNumber} -{' '}
-																{formatCurrency(account.bookBalance)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+									<FormMessage />
+								</FormItem>
 							)}
+						/>
 
-							{step === 2 && (
-								<>
-									<FormField
-										control={control}
-										name='startDate'
-										render={({ field }) => (
-											<FormItem className='flex flex-col w-full'>
-												<FormLabel>Start Date</FormLabel>
+						<FormField
+							control={control}
+							name='startDate'
+							render={({ field }) => (
+								<FormItem className='flex flex-col w-full'>
+									<FormLabel>Start Date</FormLabel>
 
-												<Input
-													{...field}
-													placeholder='Enter your start date'
-													type='date'
-												/>
-
-												<FormMessage />
-											</FormItem>
-										)}
+									<Input
+										{...field}
+										placeholder='Enter your start date'
+										type='date'
 									/>
 
-									<FormField
-										control={control}
-										name='endDate'
-										render={({ field }) => (
-											<FormItem className='flex flex-col w-full'>
-												<FormLabel>End Date</FormLabel>
-
-												<Input
-													{...field}
-													placeholder='Enter your end date'
-													type='date'
-												/>
-
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</>
+									<FormMessage />
+								</FormItem>
 							)}
+						/>
 
-							<div className='flex justify-between'>
-								{step > 1 && (
-									<Button
-										type='button'
-										onClick={previousStep}
-										variant='outline'
-									>
-										Back
-									</Button>
-								)}
+						<FormField
+							control={control}
+							name='endDate'
+							render={({ field }) => (
+								<FormItem className='flex flex-col w-full'>
+									<FormLabel>End Date</FormLabel>
 
-								{step === 1 && (
-									<Button type='button' className='ml-auto' onClick={nextStep}>
-										Next
-									</Button>
-								)}
+									<Input
+										{...field}
+										placeholder='Enter your end date'
+										type='date'
+									/>
 
-								{step === 2 && (
-									<Button
-										type='submit'
-										className='ml-auto'
-										disabled={isPending}
-									>
-										Submit
-									</Button>
-								)}
-							</div>
-						</form>
-					</Form>
-				</>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<Button type='submit' className='w-full' disabled={isPending}>
+							Submit
+						</Button>
+					</form>
+				</Form>
 			)}
 
 			{accountHistory.length > 0 && (
 				<div className='w-full text-center mb-4'>
-					<div className='w-full flex justify-between my-6'>
-						<div className='flex flex-col items-start'>
-							<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
-							<p>
-								Opening Balance: {formatCurrency(accountHistory[0].OPENING_BAL)}
-							</p>
-							<p>
-								Available Balance:{' '}
-								{formatCurrency(accountHistory[0].CLOSING_BAL)}
-							</p>
-							<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
-							<p>
-								Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
-								{accountHistory[0].END_DATE}
-							</p>
-							<p>Total Transactions: {accountHistory.length}</p>
-						</div>
+					<Card>
+						<CardHeader>
+							<CardTitle>Statement Details</CardTitle>
 
-						<div className='flex flex-col items-end'>
-							<p>{accountHistory[0].NAM_CUST_FULL}</p>
-							<p>{accountHistory[0].address}</p>
-						</div>
-					</div>
+							<PDFDownloadLink
+								document={<StatementPDF accountHistory={accountHistory} />}
+								fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
+							>
+								<Button className='flex gap-2 items-center font-bold'>
+									Download
+									<Save className='h-4 w-4' />
+								</Button>
+							</PDFDownloadLink>
+						</CardHeader>
 
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Account Number</TableHead>
-								<TableHead>Transaction Date</TableHead>
-								<TableHead>Transaction Amount</TableHead>
-								<TableHead>Narration</TableHead>
-							</TableRow>
-						</TableHeader>
+						<CardContent>
+							<div className='w-full flex justify-between my-6'>
+								<div className='flex flex-col items-start'>
+									<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
+									<p>
+										Opening Balance:{' '}
+										{formatCurrency(accountHistory[0].OPENING_BAL)}
+									</p>
+									<p>
+										Available Balance:{' '}
+										{formatCurrency(accountHistory[0].CLOSING_BAL)}
+									</p>
+									<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
+									<p>
+										Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
+										{accountHistory[0].END_DATE}
+									</p>
+									<p>Total Transactions: {accountHistory.length}</p>
+								</div>
 
-						<TableBody className='text-left'>
-							{items.map((account: any, index: number) => (
-								<TableRow key={index}>
-									<TableCell>{account.COD_ACCT_NO}</TableCell>
-									<TableCell>{account.DAT_TXN}</TableCell>
-									<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
-									<TableCell>{account.TXT_TXN_DESC}</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+								<div className='flex flex-col items-end'>
+									<p>{accountHistory[0].NAM_CUST_FULL}</p>
+									<p>{accountHistory[0].address}</p>
+								</div>
+							</div>
+
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Account Number</TableHead>
+										<TableHead>Transaction Date</TableHead>
+										<TableHead>Transaction Amount</TableHead>
+										<TableHead>Narration</TableHead>
+									</TableRow>
+								</TableHeader>
+
+								<TableBody className='text-left'>
+									{items.map((account: any, index: number) => (
+										<TableRow key={index}>
+											<TableCell>{account.COD_ACCT_NO}</TableCell>
+											<TableCell>{account.DAT_TXN}</TableCell>
+											<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
+											<TableCell>{account.TXT_TXN_DESC}</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
 
 					<div className='float-right my-3'>
 						<Paginate
