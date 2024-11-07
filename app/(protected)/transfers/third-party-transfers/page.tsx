@@ -573,7 +573,7 @@ export default function ThirdPartyTransfers() {
 
 								<Button
 									type='button'
-									onClick={() => {
+									onClick={() =>
 										mutate({
 											userRec: userData?.userRec,
 											values: {
@@ -597,8 +597,8 @@ export default function ThirdPartyTransfers() {
 													retMsg: accessCode?.retMsg,
 												},
 											},
-										});
-									}}
+										})
+									}
 									variant='outline'
 									className='flex-1'
 									disabled={isPending}
