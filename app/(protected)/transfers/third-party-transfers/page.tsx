@@ -589,6 +589,7 @@ export default function ThirdPartyTransfers() {
 												Narration: getValues('narration'),
 												TransferCode: getValues('transferCode'),
 												sendOption: notificationMode,
+												trfType: 'InterBankNeft',
 												theTree: {
 													Char1: accessCode?.Char1,
 													Char2: accessCode?.Char2,
