@@ -725,7 +725,6 @@ export const doNIPTransferReversal = async (userRec: any, values: any) => {
 	}
 };
 
-// account history details
 export const getAccountHistory = async (
 	acctno: string,
 	startdate: string,
@@ -871,7 +870,7 @@ export const returnPutXrefDetails = async (userRec: any, values: any) => {
         <pFullName>${userRec?.pFullName}</pFullName>
         <Narration>''</Narration>
         <PaymentReference>''</PaymentReference>
-        <retVal>''</retVal>
+        <retVal>Boolean</retVal>
         <retMsg>''</retMsg>
         <theTree>
           <Char1>${values?.theTree.Char1}</Char1>

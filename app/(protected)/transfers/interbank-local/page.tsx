@@ -138,9 +138,7 @@ export default function InterBankLocalTransfers() {
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='text-2xl font-bold'>
-				Third Party Transfers (Other Banks)
-			</h2>
+			<h2 className='text-2xl font-bold'>Interbank (Local)</h2>
 
 			<div className='w-full text-center mb-4'>
 				<h3 className='text-lg'>Step {step} of 4</h3>
