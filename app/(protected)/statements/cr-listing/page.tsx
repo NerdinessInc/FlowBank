@@ -67,7 +67,7 @@ export default function CRListing() {
 	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ['cr-listing'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,

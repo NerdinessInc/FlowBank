@@ -67,7 +67,7 @@ export default function FullStatement() {
 	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ['full-statement'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,

@@ -870,7 +870,7 @@ export const returnPutXrefDetails = async (userRec: any, values: any) => {
         <pFullName>${userRec?.pFullName}</pFullName>
         <Narration>''</Narration>
         <PaymentReference>''</PaymentReference>
-        <retVal>Boolean</retVal>
+        <retVal>${true}</retVal>
         <retMsg>''</retMsg>
         <theTree>
           <Char1>${values?.theTree.Char1}</Char1>
@@ -933,6 +933,51 @@ export const returnPutXrefDetails = async (userRec: any, values: any) => {
 		return {
 			success: false,
 			errorMessage: 'Something went wrong! Please try again.',
+		};
+	}
+};
+
+export const saveMessageDetails = async (values: any) => {
+	console.log(values, 'api');
+
+	const body = `
+    <SaveMessageDetails xmlns="http://con.Ibplc.org/">
+      <msgDetails>
+        <MessageDate>${values.messageDate}</MessageDate>
+        <MessageStatus>${values.messageStatus}</MessageStatus>
+        <MessageBody>${values.messageBody}</MessageBody>
+        <MessageSenderName>${values.messageSenderName}</MessageSenderName>
+        <MessageSenderEmail>${values.messageSenderEmail}</MessageSenderEmail>
+        <MessageSenderPhone>${values.messageSenderPhone}</MessageSenderPhone>
+        <MessageSenderCustId>${values.messageSenderCustId}</MessageSenderCustId>
+        <MessageTypeId>${values.messageTypeId}</MessageTypeId>
+        <OperationOk>${true}</OperationOk>
+        <ErrorsOccured>${false}</ErrorsOccured>
+        <ErrorMessage>''</ErrorMessage>
+      </msgDetails>
+    </SaveMessageDetails>
+  `
+		.trim()
+		.replace(/\s+/g, ' ');
+
+	try {
+		const { data } = await soapRequest(
+			'/NibssService/NibssAppService.asmx',
+			body
+		);
+
+		console.log(data, 'pol');
+
+		const result = data['SaveMessageDetailsResult'];
+
+		return {
+			success: true,
+			data: result,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			errorMessage: 'Failed to save message details. Please try again.',
 		};
 	}
 };

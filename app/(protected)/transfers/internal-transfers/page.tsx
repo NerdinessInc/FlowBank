@@ -49,7 +49,7 @@ export default function InternalTransfers() {
 	const [step, setStep] = useState(1);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ['internal-transfers'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,

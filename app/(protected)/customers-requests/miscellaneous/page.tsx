@@ -1,4 +1,6 @@
 'use client';
+
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 
 // form
@@ -6,12 +8,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// icons
-import { CalendarIcon } from 'lucide-react';
+// query
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 // components
+import { Loading } from '@/components/Loader';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
 	Form,
 	FormControl,
@@ -20,26 +22,89 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+
+// store
+import { appStore } from '@/store';
 
 // utils
-import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/utils/formatNumber';
+
+// services
+import { saveMessageDetails, ReturnAcctDetails2 } from '@/services/api';
 
 export default function Miscellaneous() {
+	const { userData } = appStore();
+	const [sessionID, setSessionID] = useState(null);
+
+	// session id
+	useEffect(() => {
+		async function fetchSessionID() {
+			const res = await fetch('/api/getSessionId');
+			if (res.ok) {
+				const data = await res.json();
+				setSessionID(data.sessionID);
+			} else {
+				console.error('Failed to fetch session ID');
+			}
+		}
+		fetchSessionID();
+	}, []);
+
+	const { data, isLoading } = useQuery({
+		queryKey: ['my-accounts'],
+		queryFn: () =>
+			ReturnAcctDetails2(
+				2,
+				userData?.userRec,
+				userData?.acctCollection?.AcctStruct
+			),
+		enabled: !!userData?.acctCollection?.AcctStruct,
+	});
+
+	const { mutate, isPending } = useMutation({
+		mutationFn: (data: any) => saveMessageDetails(data),
+		onSuccess: (res: any) => {
+			console.log(res);
+		},
+	});
+
 	const miscellaneousSchema = z.object({
-		requestDate: z.date({
-			required_error: 'Please enter your request date',
-		}),
+		messageTypeId: z.string().min(1, 'Please enter your message type id'),
+		messageDate: z.string().min(1, 'Please enter your message date'),
+		messageStatus: z.string().min(1, 'Please enter your message status'),
+		messageSenderName: z
+			.string()
+			.min(1, 'Please enter your message sender name'),
+		messageSenderEmail: z
+			.string()
+			.min(1, 'Please enter your message sender email'),
+		messageSenderPhone: z
+			.number()
+			.min(1, 'Please enter your message sender phone'),
+		messageSenderCustId: z
+			.number()
+			.min(1, 'Please enter your message sender cust id'),
+		account: z.string().min(1, 'Please select an account'),
 		message: z.string().min(1, 'Please enter your message'),
 	});
 
 	const defaultValues = {
-		requestDate: new Date(),
+		messageTypeId: '',
+		messageDate: '',
+		messageStatus: '',
+		messageSenderName: '',
+		messageSenderEmail: '',
+		messageSenderPhone: '',
+		messageSenderCustId: '',
+		account: '',
 		message: '',
 	};
 
@@ -48,11 +113,42 @@ export default function Miscellaneous() {
 		resolver: zodResolver(miscellaneousSchema),
 	});
 
-	const { handleSubmit } = methods;
+	const { handleSubmit, setValue } = methods;
 
-	const onSubmit = async (data: z.infer<typeof miscellaneousSchema>) => {
-		console.log(data);
+	useEffect(() => {
+		if (data?.data && sessionID && userData?.acctCollection?.AcctStruct) {
+			setValue('messageTypeId', `MiscRequest|${sessionID}`);
+			setValue('messageDate', format(new Date(), 'dd-MM-yyyy'));
+			setValue('messageStatus', 'Pending');
+			setValue(
+				'messageSenderName',
+				userData.acctCollection.AcctStruct[1].cod_acct_title as string
+			);
+			setValue(
+				'messageSenderEmail',
+				userData.acctCollection.AcctStruct[1].Email as string
+			);
+			setValue(
+				'messageSenderPhone',
+				userData.acctCollection.AcctStruct[1].Gsm as any
+			);
+			setValue(
+				'messageSenderCustId',
+				userData.acctCollection.AcctStruct[1].CustomerID as any
+			);
+		}
+	}, [data, sessionID, userData, setValue]);
+
+	const onSubmit = async (data: any) => {
+		const newData = {
+			...data,
+			messageBody: `Miscellaneous Request from User with Acct No:${data.account}|.Details are as follows: ${data.message}`,
+		};
+
+		mutate(newData);
 	};
+
+	if (isLoading) return <Loading />;
 
 	return (
 		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
@@ -65,40 +161,25 @@ export default function Miscellaneous() {
 				>
 					<FormField
 						control={methods.control}
-						name='requestDate'
+						name='account'
 						render={({ field }) => (
-							<FormItem className='flex flex-col w-full'>
-								<FormLabel>Date of birth</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={'outline'}
-												className={cn(
-													'pl-3 text-left font-normal',
-													!field.value && 'text-muted-foreground'
-												)}
-											>
-												{field.value ? (
-													format(field.value, 'PPP')
-												) : (
-													<span>Pick a date</span>
-												)}
-												<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-
-									<PopoverContent className='w-auto p-0' align='start'>
-										<Calendar
-											mode='single'
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-
+							<FormItem>
+								<FormLabel>Select Account</FormLabel>
+								<FormControl>
+									<Select onValueChange={field.onChange} value={field.value}>
+										<SelectTrigger>
+											<SelectValue placeholder='Select Source Account' />
+										</SelectTrigger>
+										<SelectContent>
+											{data?.data?.map((account: any, index: number) => (
+												<SelectItem key={index} value={account.accountNumber}>
+													{account.accountNumber} -{' '}
+													{formatCurrency(account.bookBalance)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
@@ -114,17 +195,16 @@ export default function Miscellaneous() {
 									<Textarea
 										{...field}
 										placeholder='Enter your message'
-										required
+										className='resize-none'
 									/>
 								</FormControl>
-
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
 
 					<Button className='w-full font-semibold mt-3' type='submit'>
-						Submit
+						{isPending ? '...' : 'Submit'}
 					</Button>
 				</form>
 			</Form>

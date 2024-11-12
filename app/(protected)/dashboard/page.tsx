@@ -40,7 +40,7 @@ export default function Dashboard() {
 	const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ['account-details'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,

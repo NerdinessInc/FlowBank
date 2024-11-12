@@ -54,8 +54,7 @@ import {
 	ReturnAcctDetails2,
 	getNeftBranches,
 	returnNameEnquiry,
-	getAccessCode,
-	ReturngetOTUP,
+	// ReturngetOTUP,
 	returnPutXrefDetails,
 } from '@/services/api';
 
@@ -67,15 +66,16 @@ export default function ThirdPartyTransfers() {
 		'2-4'
 	);
 
-	const [accessCodeChars, setAccessCodeChars] = useState<any>({});
-	const [notificationMode, setNotificationMode] = useState<'1' | '2'>('1');
+	const [notificationMode, setNotificationMode] = useState<
+		'Default_Option' | 'Email_Option' | 'SMS_Option' | 'GSM_and_EMAIL'
+	>('Default_Option');
 
 	const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
 	const [sessionID, setSessionID] = useState(null);
 
 	// get account details
 	const { data, isLoading } = useQuery({
-		queryKey: ['internal-transfers'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,
@@ -84,10 +84,6 @@ export default function ThirdPartyTransfers() {
 			),
 		enabled: !!userData?.acctCollection?.AcctStruct,
 	});
-
-	useEffect(() => {
-		getAccessCode().then((res: any) => setAccessCodeChars(res.data));
-	}, []);
 
 	// session id
 	useEffect(() => {
@@ -445,17 +441,17 @@ export default function ThirdPartyTransfers() {
 													<p>
 														Enter the{' '}
 														<span className='font-bold'>
-															{accessCodeChars.Char1}
+															{accessCode.Char1}
 														</span>
 														,
 														<span className='font-bold'>
 															{' '}
-															{accessCodeChars.Char2}
+															{accessCode.Char2}
 														</span>
 														, and
 														<span className='font-bold'>
 															{' '}
-															{accessCodeChars.Char3}
+															{accessCode.Char3}
 														</span>{' '}
 														Characters of your transfer code.
 													</p>
@@ -565,8 +561,14 @@ export default function ThirdPartyTransfers() {
 											<SelectValue placeholder='Select Notification Mode' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='1'>Email</SelectItem>
-											<SelectItem value='2'>SMS</SelectItem>
+											<SelectItem value='Default_Option'>
+												Default Option
+											</SelectItem>
+											<SelectItem value='Email_Option'>Email</SelectItem>
+											<SelectItem value='SMS_Option'>SMS</SelectItem>
+											<SelectItem value='GSM_and_EMAIL'>
+												GSM and Email
+											</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>

@@ -67,7 +67,7 @@ export default function DRListing() {
 	const [items, setItems] = useState<any[]>([]);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ['dr-listing'],
+		queryKey: ['my-accounts'],
 		queryFn: () =>
 			ReturnAcctDetails2(
 				2,
