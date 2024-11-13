@@ -1,4 +1,5 @@
 export interface UserDataResponse {
+	[x: string]: any;
 	success: boolean;
 	errorMessage: string;
 	profileNotFound: boolean;

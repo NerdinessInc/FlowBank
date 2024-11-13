@@ -44,9 +44,6 @@ import { appStore } from '@/store';
 // services
 import { authUser, getAccessCode } from '@/services/api';
 
-export const description =
-	"A simple login form with email and password. The submit button says 'Login'.";
-
 const LoginForm = () => {
 	// const router = useRouter();
 	const { login, setAccessCode } = appStore();
@@ -233,6 +230,6 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
-function wait(arg0: number) {
-	throw new Error('Function not implemented.');
-}
+// function wait(arg0: number) {
+// 	throw new Error('Function not implemented.');
+// }

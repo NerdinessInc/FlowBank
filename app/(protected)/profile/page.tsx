@@ -83,7 +83,7 @@ export default function Profile() {
 			username: string;
 			accessCode: string;
 			newPassword: string;
-		}) => changePassword(data.username, data.accessCode, data.newPassword),
+		}) => changePassword(data),
 		onSuccess: (res: any) => {
 			console.log(res);
 

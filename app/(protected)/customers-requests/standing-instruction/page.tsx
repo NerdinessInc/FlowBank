@@ -1,18 +1,15 @@
 'use client';
 
-import { format } from 'date-fns';
-
 // form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// icons
-import { CalendarIcon } from 'lucide-react';
-
 // components
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
 import {
 	Form,
 	FormControl,
@@ -21,12 +18,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
+
 import {
 	Select,
 	SelectContent,
@@ -34,10 +26,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-
-// utils
-import { cn } from '@/lib/utils';
 
 export default function StandingInstruction() {
 	const standingInstructionSchema = z.object({
@@ -45,8 +33,8 @@ export default function StandingInstruction() {
 		availableBalance: z.string().min(1, 'Please enter your available balance'),
 		toAccount: z.string().min(1, 'Please enter your to account'),
 		amount: z.string().min(1, 'Please enter your amount'),
-		startDate: z.date({ required_error: 'Please enter the start date' }),
-		endDate: z.date({ required_error: 'Please enter the end date' }),
+		startDate: z.string({ required_error: 'Please enter the start date' }),
+		endDate: z.string({ required_error: 'Please enter the end date' }),
 		frequency: z.string().min(1, 'Please enter your frequency'),
 		narration: z.string().min(1, 'Please enter your narration'),
 	});
@@ -56,8 +44,8 @@ export default function StandingInstruction() {
 		availableBalance: '',
 		toAccount: '',
 		amount: '',
-		startDate: new Date(),
-		endDate: new Date(),
+		startDate: '',
+		endDate: '',
 		frequency: '',
 		narration: '',
 	};
@@ -183,34 +171,11 @@ export default function StandingInstruction() {
 								render={({ field }) => (
 									<FormItem className='flex flex-col w-full'>
 										<FormLabel>Start Date</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant={'outline'}
-														className={cn(
-															'pl-3 text-left font-normal',
-															!field.value && 'text-muted-foreground'
-														)}
-													>
-														{field.value ? (
-															format(field.value, 'PPP')
-														) : (
-															<span>Pick a date</span>
-														)}
-														<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-											<PopoverContent className='w-auto p-0' align='start'>
-												<Calendar
-													mode='single'
-													selected={field.value}
-													onSelect={field.onChange}
-													initialFocus
-												/>
-											</PopoverContent>
-										</Popover>
+										<Input
+											{...field}
+											placeholder='Enter your start date'
+											type='date'
+										/>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -221,34 +186,11 @@ export default function StandingInstruction() {
 								render={({ field }) => (
 									<FormItem className='flex flex-col w-full'>
 										<FormLabel>End Date</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant={'outline'}
-														className={cn(
-															'pl-3 text-left font-normal',
-															!field.value && 'text-muted-foreground'
-														)}
-													>
-														{field.value ? (
-															format(field.value, 'PPP')
-														) : (
-															<span>Pick a date</span>
-														)}
-														<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-											<PopoverContent className='w-auto p-0' align='start'>
-												<Calendar
-													mode='single'
-													selected={field.value}
-													onSelect={field.onChange}
-													initialFocus
-												/>
-											</PopoverContent>
-										</Popover>
+										<Input
+											{...field}
+											placeholder='Enter your end date'
+											type='date'
+										/>
 										<FormMessage />
 									</FormItem>
 								)}

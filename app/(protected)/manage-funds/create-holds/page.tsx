@@ -1,18 +1,14 @@
 'use client';
 
-import { format } from 'date-fns';
-
 // form
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// icons
-import { CalendarIcon } from 'lucide-react';
-
 // components
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+
 import {
 	Form,
 	FormControl,
@@ -21,12 +17,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
+
 import {
 	Select,
 	SelectContent,
@@ -36,7 +27,6 @@ import {
 } from '@/components/ui/select';
 
 // utils
-import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function CreateHolds() {
@@ -45,7 +35,7 @@ export default function CreateHolds() {
 		balance: z.string().min(1, 'Please enter your balance'),
 		holdAmount: z.string().min(1, 'Please enter your hold amount'),
 		holdReason: z.string().min(1, 'Please enter your hold reason'),
-		holdExpiryDate: z.date({
+		holdExpiryDate: z.string({
 			required_error: 'Please enter the date',
 		}),
 	});
@@ -55,7 +45,7 @@ export default function CreateHolds() {
 		balance: '',
 		holdAmount: '',
 		holdReason: '',
-		holdExpiryDate: new Date(),
+		holdExpiryDate: '',
 	};
 
 	const methods = useForm({
@@ -161,35 +151,11 @@ export default function CreateHolds() {
 						render={({ field }) => (
 							<FormItem className='flex flex-col w-full'>
 								<FormLabel>Hold Expiry Date</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={'outline'}
-												className={cn(
-													'pl-3 text-left font-normal',
-													!field.value && 'text-muted-foreground'
-												)}
-											>
-												{field.value ? (
-													format(field.value, 'PPP')
-												) : (
-													<span>Pick a date</span>
-												)}
-												<CalendarIcon className='ml-auto h-4 w-4 opacity-50' />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-
-									<PopoverContent className='w-auto p-0' align='start'>
-										<Calendar
-											mode='single'
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
+								<Input
+									{...field}
+									placeholder='Enter your hold expiry date'
+									type='date'
+								/>
 
 								<FormMessage />
 							</FormItem>
