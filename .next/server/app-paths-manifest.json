@@ -1,24 +1,5 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/getSessionId/route": "app/api/getSessionId/route.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/(auth)/page": "app/(auth)/page.js",
-  "/(protected)/account-information/summary/page": "app/(protected)/account-information/summary/page.js",
-  "/(protected)/account-information/my-accounts/page": "app/(protected)/account-information/my-accounts/page.js",
-  "/(protected)/customers-requests/standing-instruction/page": "app/(protected)/customers-requests/standing-instruction/page.js",
-  "/(protected)/customers-requests/cheque-book/page": "app/(protected)/customers-requests/cheque-book/page.js",
-  "/(protected)/customers-requests/stop-payment/page": "app/(protected)/customers-requests/stop-payment/page.js",
-  "/(protected)/customers-requests/miscellaneous/page": "app/(protected)/customers-requests/miscellaneous/page.js",
-  "/(protected)/manage-funds/create-holds/page": "app/(protected)/manage-funds/create-holds/page.js",
-  "/(protected)/payments/data/page": "app/(protected)/payments/data/page.js",
-  "/(protected)/profile/page": "app/(protected)/profile/page.js",
   "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
-  "/(protected)/statements/dr-listing/page": "app/(protected)/statements/dr-listing/page.js",
-  "/(protected)/transfers/beneficiaries/page": "app/(protected)/transfers/beneficiaries/page.js",
-  "/(protected)/payments/airtime/page": "app/(protected)/payments/airtime/page.js",
-  "/(protected)/statements/full/page": "app/(protected)/statements/full/page.js",
-  "/(protected)/statements/cr-listing/page": "app/(protected)/statements/cr-listing/page.js",
-  "/(protected)/transfers/interbank-local/page": "app/(protected)/transfers/interbank-local/page.js",
-  "/(protected)/transfers/internal-transfers/page": "app/(protected)/transfers/internal-transfers/page.js",
-  "/(protected)/transfers/third-party-transfers/page": "app/(protected)/transfers/third-party-transfers/page.js"
+  "/(auth)/page": "app/(auth)/page.js"
 }
