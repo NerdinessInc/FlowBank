@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/app/(protected)/layout';
-import Image from 'next/image';
+import { format } from 'date-fns';
+import { usePathname } from 'next/navigation';
 
 // components
 import {
@@ -13,6 +14,8 @@ import {
 import { SelectGroup } from '@radix-ui/react-select';
 
 const Navbar = () => {
+	const pathname = usePathname();
+
 	const { theme, changeTheme } = useTheme();
 	const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -43,14 +46,14 @@ const Navbar = () => {
 			<div className='flex justify-between items-center'>
 				{/* Logo section */}
 				<div className='flex items-center space-x-4'>
-					<Image
-						src='/path-to-logo/logo.png'
-						alt='Logo'
-						width={100}
-						height={100}
-						className='h-8 w-8'
-					/>
-					<h1 className='text-white font-bold text-xl'>Internet Banking</h1>
+					<h1 className='text-white font-bold text-xl'>
+						Internet Banking -{' '}
+						<span className='capitalize'>
+							{pathname.split('/')[1]?.replace('-', ' ')}
+							{pathname.split('/')?.length > 2 ? ' / ' : ' '}
+							{pathname.split('/')[2]?.replace('-', ' ')}
+						</span>
+					</h1>
 				</div>
 
 				{/* Menu section 
@@ -63,7 +66,9 @@ const Navbar = () => {
 				{/* Time and Theme Dropdown */}
 				<div className='flex items-center space-x-4'>
 					{/* Current Time */}
-					<div className='text-white'>{currentTime.toLocaleTimeString()}</div>
+					<div className='text-white w-full'>
+						{format(currentTime, 'dd MMM yyyy, hh:mm:ss a')}
+					</div>
 
 					{/* Dropdown to change theme color */}
 					<Select value={theme} onValueChange={(value) => changeTheme(value)}>

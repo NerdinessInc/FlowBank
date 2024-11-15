@@ -1,5 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
-  "/(auth)/page": "app/(auth)/page.js"
+  "/(protected)/manage-funds/create-holds/page": "app/(protected)/manage-funds/create-holds/page.js",
+  "/(protected)/payments/airtime/page": "app/(protected)/payments/airtime/page.js",
+  "/(protected)/customers-requests/cheque-book/page": "app/(protected)/customers-requests/cheque-book/page.js",
+  "/(protected)/account-information/my-accounts/page": "app/(protected)/account-information/my-accounts/page.js"
 }
