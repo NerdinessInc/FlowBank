@@ -1,8 +1,8 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/(auth)/page": "app/(auth)/page.js",
   "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
-  "/(protected)/manage-funds/create-holds/page": "app/(protected)/manage-funds/create-holds/page.js",
-  "/(protected)/payments/airtime/page": "app/(protected)/payments/airtime/page.js",
-  "/(protected)/customers-requests/cheque-book/page": "app/(protected)/customers-requests/cheque-book/page.js",
-  "/(protected)/account-information/my-accounts/page": "app/(protected)/account-information/my-accounts/page.js"
+  "/(protected)/statements/cr-listing/page": "app/(protected)/statements/cr-listing/page.js",
+  "/(protected)/statements/dr-listing/page": "app/(protected)/statements/dr-listing/page.js",
+  "/(protected)/statements/full/page": "app/(protected)/statements/full/page.js"
 }

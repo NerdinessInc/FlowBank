@@ -122,7 +122,7 @@ const LoginForm = () => {
 	};
 
 	return (
-		<main className='w-full h-full flex items-center justify-center bg-background'>
+		<main className='w-full h-full flex items-center justify-center'>
 			<Card className='w-full max-w-sm py-6'>
 				<CardContent className='grid gap-4'>
 					<Form {...methods}>

@@ -1,21 +1,5 @@
 {
   "pages": {
-    "/(auth)/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/page.js"
-    ],
-    "/(auth)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/layout.js"
-    ],
-    "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
     "/(protected)/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -26,35 +10,36 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(protected)/layout.js"
     ],
-    "/(protected)/profile/page": [
+    "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/profile/page.js"
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
-    "/(protected)/account-information/my-accounts/page": [
+    "/(auth)/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/account-information/my-accounts/page.js"
+      "static/chunks/app/(auth)/page.js"
     ],
-    "/(protected)/account-information/summary/page": [
+    "/(auth)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/account-information/summary/page.js"
+      "static/chunks/app/(auth)/layout.js"
     ],
-    "/(protected)/manage-funds/create-holds/page": [
+    "/(protected)/statements/cr-listing/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/manage-funds/create-holds/page.js"
+      "static/chunks/app/(protected)/statements/cr-listing/page.js"
     ],
-    "/(protected)/payments/airtime/page": [
+    "/(protected)/statements/dr-listing/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/payments/airtime/page.js"
+      "static/chunks/app/(protected)/statements/dr-listing/page.js"
     ],
-    "/(protected)/customers-requests/cheque-book/page": [
+    "/(protected)/statements/full/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(protected)/customers-requests/cheque-book/page.js"
+      "static/chunks/app/(protected)/statements/full/page.js"
     ]
   }
 }

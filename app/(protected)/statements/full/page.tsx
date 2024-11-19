@@ -22,6 +22,7 @@ import { StatementPDF } from '@/components/StatementPDF';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator'; // Add Separator component
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -133,88 +134,75 @@ export default function FullStatement() {
 			<h2 className='text-2xl font-bold'>Full Statement</h2>
 
 			{accountHistory.length === 0 && (
-				<>
-					<Form {...methods}>
-						<form
-							onSubmit={handleSubmit(onSubmit)}
-							className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
-						>
-							<FormField
-								control={control}
-								name='account'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Select Account</FormLabel>
-										<FormControl>
-											<Select
-												value={field.value}
-												onValueChange={field.onChange}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder='Select account' />
-												</SelectTrigger>
+				<Form {...methods}>
+					<form
+						onSubmit={handleSubmit(onSubmit)}
+						className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
+					>
+						<FormField
+							control={control}
+							name='account'
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Select Account</FormLabel>
+									<FormControl>
+										<Select value={field.value} onValueChange={field.onChange}>
+											<SelectTrigger>
+												<SelectValue placeholder='Select account' />
+											</SelectTrigger>
+											<SelectContent>
+												{data?.data?.map((account: any, index: number) => (
+													<SelectItem key={index} value={account.accountNumber}>
+														{account.accountNumber} -{' '}
+														{formatCurrency(account.bookBalance)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</FormControl>
 
-												<SelectContent>
-													{data?.data?.map((account: any, index: number) => (
-														<SelectItem
-															key={index}
-															value={account.accountNumber}
-														>
-															{account.accountNumber} -{' '}
-															{formatCurrency(account.bookBalance)}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+						<FormField
+							control={control}
+							name='startDate'
+							render={({ field }) => (
+								<FormItem className='flex flex-col w-full'>
+									<FormLabel>Start Date</FormLabel>
+									<Input
+										{...field}
+										placeholder='Enter your start date'
+										type='date'
+									/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-							<FormField
-								control={control}
-								name='startDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col w-full'>
-										<FormLabel>Start Date</FormLabel>
+						<FormField
+							control={control}
+							name='endDate'
+							render={({ field }) => (
+								<FormItem className='flex flex-col w-full'>
+									<FormLabel>End Date</FormLabel>
+									<Input
+										{...field}
+										placeholder='Enter your end date'
+										type='date'
+									/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-										<Input
-											{...field}
-											placeholder='Enter your start date'
-											type='date'
-										/>
-
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={control}
-								name='endDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col w-full'>
-										<FormLabel>End Date</FormLabel>
-
-										<Input
-											{...field}
-											placeholder='Enter your end date'
-											type='date'
-										/>
-
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<Button type='submit' className='w-full' disabled={isPending}>
-								Submit
-							</Button>
-						</form>
-					</Form>
-				</>
+						<Button type='submit' className='w-full' disabled={isPending}>
+							Submit
+						</Button>
+					</form>
+				</Form>
 			)}
 
 			{accountHistory.length > 0 && (
@@ -226,8 +214,9 @@ export default function FullStatement() {
 							<PDFDownloadLink
 								document={<StatementPDF accountHistory={accountHistory} />}
 								fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
+								className='w-36'
 							>
-								<Button className='flex gap-2 items-center font-bold'>
+								<Button className='flex gap-2 items-center font-bold w-full'>
 									Download
 									<Save className='h-4 w-4' />
 								</Button>
@@ -235,6 +224,7 @@ export default function FullStatement() {
 						</CardHeader>
 
 						<CardContent>
+							<Separator className='my-4' /> {/* Adding a Separator */}
 							<div className='w-full flex justify-between my-6'>
 								<div className='flex flex-col items-start'>
 									<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
@@ -259,7 +249,7 @@ export default function FullStatement() {
 									<p>{accountHistory[0].address}</p>
 								</div>
 							</div>
-
+							<Separator className='my-4' /> {/* Adding another Separator */}
 							<Table>
 								<TableHeader>
 									<TableRow>

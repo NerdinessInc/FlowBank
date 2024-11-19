@@ -22,6 +22,7 @@ import { StatementPDF } from '@/components/StatementPDF';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -218,8 +219,9 @@ export default function CRListing() {
 							<PDFDownloadLink
 								document={<StatementPDF accountHistory={accountHistory} />}
 								fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
+								className='w-36'
 							>
-								<Button className='flex gap-2 items-center font-bold'>
+								<Button className='flex gap-2 items-center font-bold w-full'>
 									Download
 									<Save className='h-4 w-4' />
 								</Button>
@@ -227,6 +229,8 @@ export default function CRListing() {
 						</CardHeader>
 
 						<CardContent>
+							<Separator className='my-4' />
+
 							<div className='w-full flex justify-between my-6'>
 								<div className='flex flex-col items-start'>
 									<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
@@ -252,8 +256,10 @@ export default function CRListing() {
 								</div>
 							</div>
 
+							<Separator className='my-4' />
+
 							<Table>
-								<TableHeader>
+								<TableHeader className='bg-background'>
 									<TableRow>
 										<TableHead>Account Number</TableHead>
 										<TableHead>Transaction Date</TableHead>
