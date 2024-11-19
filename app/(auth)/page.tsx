@@ -95,9 +95,6 @@ const LoginForm = () => {
 	const authUserMutation = useMutation({
 		mutationFn: authUser,
 		onSuccess: (res: any) => {
-			console.log('Login Response');
-			console.log(res);
-			// wait(30000);
 			if (!res.success) {
 				toast({
 					title: res.errorMessage,
