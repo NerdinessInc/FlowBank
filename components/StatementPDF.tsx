@@ -92,19 +92,31 @@ export const StatementPDF = ({ accountHistory }: { accountHistory: any[] }) => (
 			<View style={styles.section}>
 				<View style={[styles.row, styles.headerRow]}>
 					<Text style={styles.column}>Account Number</Text>
-					<Text style={styles.column}>Transaction Date</Text>
-					<Text style={styles.column}>Amount</Text>
 					<Text style={styles.column}>Narration</Text>
+					<Text style={styles.column}>Transaction Date</Text>
+					<Text style={styles.column}>Credit Amount</Text>
+					<Text style={styles.column}>Debit Amount</Text>
+					<Text style={styles.column}>Running Balance</Text>
 				</View>
 
 				{accountHistory.map((account, index) => (
 					<View key={index} style={styles.row}>
 						<Text style={styles.column}>{account.COD_ACCT_NO}</Text>
+						<Text style={styles.column}>{account.TXT_TXN_DESC}</Text>
 						<Text style={styles.column}>{account.DAT_TXN}</Text>
 						<Text style={styles.column}>
-							NGN{formatCurrency(account.AMT_TXN)}
+							{account.COD_DRCR === 'CR'
+								? 'NGN ' + formatCurrency(account.AMT_TXN)
+								: '-'}
 						</Text>
-						<Text style={styles.column}>{account.TXT_TXN_DESC}</Text>
+						<Text style={styles.column}>
+							{account.COD_DRCR === 'DR'
+								? 'NGN ' + formatCurrency(account.AMT_TXN)
+								: '-'}
+						</Text>
+						<Text style={styles.column}>
+							NGN{formatCurrency(account.RUNNING_BAL)}
+						</Text>
 					</View>
 				))}
 			</View>

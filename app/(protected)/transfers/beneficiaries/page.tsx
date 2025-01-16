@@ -54,7 +54,7 @@ export default function Beneficiaries() {
 	});
 
 	const beneficiariesSchema = z.object({
-		accountNumber: z.string().min(1, 'Please enter your beneficiary account'),
+		accountNumber: z.number().min(1, 'Please enter your beneficiary account'),
 		accountName: z.string().min(1, 'Please enter your beneficiary name'),
 		currency: z
 			.string()
@@ -62,7 +62,7 @@ export default function Beneficiaries() {
 	});
 
 	const defaultValues = {
-		accountNumber: '',
+		accountNumber: 0,
 		accountName: '',
 		currency: '',
 	};

@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
-
 // forms
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // query
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 // components
 import { Loading } from '@/components/Loader';
@@ -41,9 +39,9 @@ import { appStore } from '@/store';
 import { formatCurrency } from '@/utils/formatNumber';
 
 // services
-import { ReturnAcctDetails2 } from '@/services/api';
+import { postTransferInternal, ReturnAcctDetails2 } from '@/services/api';
 
-export default function InternalTransfers() {
+export default function InterBankLocalTransfers() {
 	const { userData } = appStore();
 
 	const [step, setStep] = useState(1);
@@ -59,45 +57,54 @@ export default function InternalTransfers() {
 		enabled: !!userData?.acctCollection?.AcctStruct,
 	});
 
-	const internalTransferSchema = z.object({
+	const interbankLocalTransfersSchema = z.object({
 		sourceAccount: z.string().min(1, 'Please select your source account'),
 		dailyTransferLimit: z
 			.number()
 			.min(1, 'Please enter your daily transfer limit'),
 		destinationAccount: z
 			.string()
-			.min(1, 'Please enter your destination account'),
-		amount: z.string().min(1, 'Please enter your amount'),
-		token: z.string().min(1, 'Please enter your Token'),
+			.min(1, 'Please select your destination account'),
+		transferAmount: z.coerce
+			.number()
+			.min(1, 'Please enter your transfer amount'),
+		transferCode: z.coerce.number().min(1, 'Please enter your transfer amount'),
+		token: z.coerce.number().min(1, 'Please enter your token'),
 	});
 
 	const defaultValues = {
 		sourceAccount: '',
 		dailyTransferLimit: 0,
 		destinationAccount: '',
-		amount: '',
-		token: '',
+		transferAmount: 0,
+		transferCode: 0,
+		token: 0,
 	};
+
+	const transferMutation = useMutation({
+		mutationFn: postTransferInternal,
+		onSuccess: (res: any) => {
+			console.log(res);
+		},
+	});
 
 	const methods = useForm({
 		defaultValues,
-		resolver: zodResolver(internalTransferSchema),
+		resolver: zodResolver(interbankLocalTransfersSchema),
 		mode: 'onChange',
 	});
 
 	const { handleSubmit, control, trigger, getValues, setValue, watch } =
 		methods;
 
-	// get daily transfer limit with source account
 	useEffect(() => {
 		if (watch('sourceAccount').length >= 10) {
 			setValue(
 				'dailyTransferLimit',
-
 				userData?.pLimitsObject?.LimitsObject?.find(
 					(limit: any) =>
 						limit.Accountnumber.toString() === watch('sourceAccount')
-				)?.InternalXferLimit as number
+				)?.InterBankLimit as number
 			);
 		}
 	}, [setValue, userData, watch('sourceAccount')]);
@@ -105,8 +112,8 @@ export default function InternalTransfers() {
 	const nextStep = async () => {
 		const fields = {
 			1: ['sourceAccount'],
-			2: ['dailyTransferLimit', 'destinationAccount'],
-			3: ['amount'],
+			2: ['destinationBank', 'beneficiaryAccount', 'beneficiaryName'],
+			3: ['transferAmount', 'transferCode'],
 		}[step];
 
 		const isValid = await trigger(fields as any);
@@ -120,8 +127,11 @@ export default function InternalTransfers() {
 		setStep((prev) => Math.max(prev - 1, 1));
 	};
 
-	const onSubmit = async (data: z.infer<typeof internalTransferSchema>) => {
-		console.log(data);
+	const onSubmit = async (
+		data: z.infer<typeof interbankLocalTransfersSchema>
+	) => {
+		console.log('Processing transfer:', data);
+		transferMutation.mutate(data);
 	};
 
 	if (isLoading) return <Loading />;
@@ -131,12 +141,11 @@ export default function InternalTransfers() {
 			<h2 className='text-2xl font-bold'>Internal Transfers</h2>
 
 			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 4</h3>
+				<h3 className='text-lg'>Step {step} of 3</h3>
 				<p className='text-gray-600'>
 					{step === 1 && 'Select your source account'}
-					{step === 2 && 'Enter daily transfer limit and destination account'}
-					{step === 3 && 'Enter transfer amount'}
-					{step === 4 && 'Confirm transfer details'}
+					{step === 2 && 'Enter transfer amount and details'}
+					{step === 3 && 'Confirm transfer details'}
 				</p>
 			</div>
 
@@ -146,35 +155,39 @@ export default function InternalTransfers() {
 					className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
 				>
 					{step === 1 && (
-						<FormField
-							control={control}
-							name='sourceAccount'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Source Account</FormLabel>
-									<FormControl>
-										<Select onValueChange={field.onChange} value={field.value}>
-											<SelectTrigger>
-												<SelectValue placeholder='Select Source Account' />
-											</SelectTrigger>
-											<SelectContent>
-												{data?.data?.map((account: any, index: number) => (
-													<SelectItem key={index} value={account.accountNumber}>
-														{account.accountNumber} -{' '}
-														{formatCurrency(account.bookBalance)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					)}
-
-					{step === 2 && (
 						<>
+							<FormField
+								control={control}
+								name='sourceAccount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Source Account</FormLabel>
+										<FormControl>
+											<Select
+												onValueChange={field.onChange}
+												value={field.value}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Source Account' />
+												</SelectTrigger>
+												<SelectContent>
+													{data?.data?.map((account: any, index: number) => (
+														<SelectItem
+															key={index}
+															value={account.accountNumber}
+														>
+															{account.accountNumber} -{' '}
+															{formatCurrency(account.bookBalance)}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
 							<FormField
 								control={control}
 								name='dailyTransferLimit'
@@ -200,10 +213,57 @@ export default function InternalTransfers() {
 									<FormItem>
 										<FormLabel>Destination Account</FormLabel>
 										<FormControl>
-											<Input
-												{...field}
-												placeholder='Enter your destination account'
-											/>
+											<Select
+												onValueChange={field.onChange}
+												value={field.value}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Select Destination Account' />
+												</SelectTrigger>
+												<SelectContent>
+													{data?.data?.map((account: any, index: number) => (
+														<SelectItem
+															key={index}
+															value={account.accountNumber}
+														>
+															{account.accountNumber} -{' '}
+															{formatCurrency(account.bookBalance)}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
+					)}
+
+					{step === 2 && (
+						<>
+							<FormField
+								control={control}
+								name='transferAmount'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Transfer Amount</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter Transfer Amount' />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={control}
+								name='transferCode'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Transfer Code</FormLabel>
+										<FormControl>
+											<Input {...field} placeholder='Enter Transfer Code' />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -213,29 +273,13 @@ export default function InternalTransfers() {
 					)}
 
 					{step === 3 && (
-						<FormField
-							control={control}
-							name='amount'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Amount</FormLabel>
-									<FormControl>
-										<Input {...field} placeholder='Enter your amount' />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					)}
-
-					{step === 4 && (
 						<div className='text-center'>
 							<p className='mb-4'>
-								You are about to transfer {formatCurrency(getValues('amount'))}{' '}
-								from your account {getValues('sourceAccount')} to{' '}
+								You are about to transfer{' '}
+								{formatCurrency(getValues('transferAmount'))} from your account{' '}
+								{getValues('sourceAccount')} to{' '}
 								{getValues('destinationAccount')}.
 							</p>
-
 							<p className='font-bold mb-4'>Do you want to proceed?</p>
 
 							<FormField
@@ -266,18 +310,17 @@ export default function InternalTransfers() {
 							</Button>
 						)}
 
-						{step < 4 && (
+						{step < 3 && (
 							<Button type='button' className='ml-auto' onClick={nextStep}>
 								Next
 							</Button>
 						)}
 
-						{step === 4 && (
+						{step === 3 && (
 							<>
 								<Button type='button' onClick={previousStep} variant='outline'>
 									Cancel
 								</Button>
-
 								<Button type='submit' className='ml-auto'>
 									Confirm Transfer
 								</Button>

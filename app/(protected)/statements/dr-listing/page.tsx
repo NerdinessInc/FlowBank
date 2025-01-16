@@ -260,7 +260,7 @@ export default function DRListing() {
 									<TableRow>
 										<TableHead>Account Number</TableHead>
 										<TableHead>Transaction Date</TableHead>
-										<TableHead>Transaction Amount</TableHead>
+										<TableHead>Debit Amount</TableHead>
 										<TableHead>Narration</TableHead>
 									</TableRow>
 								</TableHeader>

@@ -91,18 +91,18 @@ export const sidebarRoutes: Route[] = [
 		icon: <ArrowLeftRight className='h-4 w-4' />,
 		children: [
 			{
-				label: 'Internal Transfers',
-				pathname: '/transfers/internal-transfers',
-				icon: <ArrowLeftRight className='h-4 w-4' />,
-			},
-			{
 				label: 'Third Party Transfers',
 				pathname: '/transfers/third-party-transfers',
 				icon: <ArrowLeftRight className='h-4 w-4' />,
 			},
 			{
-				label: 'Interbank Local',
-				pathname: '/transfers/interbank-local',
+				label: 'Other Banks Transfers',
+				pathname: '/transfers/other-banks-transfers',
+				icon: <ArrowLeftRight className='h-4 w-4' />,
+			},
+			{
+				label: 'Internal Transfers',
+				pathname: '/transfers/internal-transfers',
 				icon: <ArrowLeftRight className='h-4 w-4' />,
 			},
 			{

@@ -263,7 +263,7 @@ export default function CRListing() {
 									<TableRow>
 										<TableHead>Account Number</TableHead>
 										<TableHead>Transaction Date</TableHead>
-										<TableHead>Transaction Amount</TableHead>
+										<TableHead>Credit Amount</TableHead>
 										<TableHead>Narration</TableHead>
 									</TableRow>
 								</TableHeader>

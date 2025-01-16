@@ -254,9 +254,11 @@ export default function FullStatement() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>Account Number</TableHead>
-										<TableHead>Transaction Date</TableHead>
-										<TableHead>Transaction Amount</TableHead>
 										<TableHead>Narration</TableHead>
+										<TableHead>Transaction Date</TableHead>
+										<TableHead>Credit Amount</TableHead>
+										<TableHead>Debit Amount</TableHead>
+										<TableHead>Running Balance</TableHead>
 									</TableRow>
 								</TableHeader>
 
@@ -264,9 +266,21 @@ export default function FullStatement() {
 									{items.map((account: any, index: number) => (
 										<TableRow key={index}>
 											<TableCell>{account.COD_ACCT_NO}</TableCell>
-											<TableCell>{account.DAT_TXN}</TableCell>
-											<TableCell>{formatCurrency(account.AMT_TXN)}</TableCell>
 											<TableCell>{account.TXT_TXN_DESC}</TableCell>
+											<TableCell>{account.DAT_TXN}</TableCell>
+											<TableCell>
+												{account.COD_DRCR === 'CR'
+													? formatCurrency(account.AMT_TXN)
+													: '-'}
+											</TableCell>
+											<TableCell>
+												{account.COD_DRCR === 'DR'
+													? formatCurrency(account.AMT_TXN)
+													: '-'}
+											</TableCell>
+											<TableCell>
+												{formatCurrency(account.RUNNING_BAL)}
+											</TableCell>
 										</TableRow>
 									))}
 								</TableBody>

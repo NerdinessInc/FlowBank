@@ -30,6 +30,9 @@ import {
 // store
 import { appStore } from '@/store';
 
+// utils
+import { formatCurrency } from '@/utils/formatNumber';
+
 // services
 import { ReturnAcctDetails2 } from '@/services/api';
 
@@ -94,7 +97,9 @@ export default function Dashboard() {
 
 					<CardContent>
 						<div className='text-2xl font-bold'>
-							{selectedAccount ? selectedAccount.availBal : 'N/A'}
+							{selectedAccount
+								? formatCurrency(selectedAccount.availBal)
+								: 'N/A'}
 						</div>
 					</CardContent>
 				</Card>
