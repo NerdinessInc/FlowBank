@@ -51,7 +51,7 @@ export interface UserRec {
 	pPassChanged: string;
 	pLastLogindate: string;
 	pProfileType: string;
-	pFullName: string;
+	pfullName: string;
 	RPass: string;
 	pUserStatus: string;
 	PXfChar: string;

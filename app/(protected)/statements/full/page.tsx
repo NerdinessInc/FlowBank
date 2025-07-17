@@ -78,6 +78,8 @@ export default function FullStatement() {
 		enabled: !!userData?.acctCollection?.AcctStruct,
 	});
 
+		const accounts = userData.acctCollection
+
 	const fullStatementSchema = z.object({
 		account: z.string().min(1, 'Please enter your account'),
 		startDate: z.string({
@@ -151,10 +153,10 @@ export default function FullStatement() {
 												<SelectValue placeholder='Select account' />
 											</SelectTrigger>
 											<SelectContent>
-												{data?.data?.map((account: any, index: number) => (
+												{accounts.map((account: any, index: number) => (
 													<SelectItem key={index} value={account.accountNumber}>
 														{account.accountNumber} -{' '}
-														{formatCurrency(account.bookBalance)}
+														{formatCurrency(Number(account.availBalance) || 0)}
 													</SelectItem>
 												))}
 											</SelectContent>

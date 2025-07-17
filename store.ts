@@ -52,14 +52,14 @@ const appStore = create<AppStore>()((set) => ({
 			userData: state,
 		}));
 
-		const userRec = state.UserRec;
-		const acctCollection = state.AcctCollection;
-		const codProd = state.cod_prod;
-		const companyUsers = state.CompanyUsers;
-		const acctBlocks = state.AcctBlocks;
-		const menuControls = state.mMenuControls;
-		const xMainMenu = state.xMainMenu;
-		const pLimitsObject = state.pLimitsObject;
+		const userRec = state.userRec;
+		const acctCollection = state.acctCollection;
+		const codProd = state.codProd;
+		const companyUsers = state.companyUsers;
+		const acctBlocks = state.acctBlocks;
+		const menuControls = state.mmenuControls;
+		const xMainMenu = state.xmainMenu;
+		const pLimitsObject = state.plimitsObject;
 
 		const appCookieData = {
 			codProd,

@@ -1,108 +1,108 @@
-import { useEffect, useState } from 'react';
-import { useTheme } from '@/app/(protected)/layout';
-import { usePathname } from 'next/navigation';
-import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import { useTheme } from "@/app/(protected)/layout";
+import { usePathname } from "next/navigation";
+import { format } from "date-fns";
 
 // icons
-import { UserCircle } from 'lucide-react';
+import { UserCircle } from "lucide-react";
 
 // components
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	SelectGroup,
-} from '@/components/ui/select';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+} from "@/components/ui/select";
 
 // store
-import { appStore } from '@/store';
+import { appStore } from "@/store";
 
 const Navbar = () => {
-	const pathname = usePathname();
+  const pathname = usePathname();
 
-	const { userData } = appStore();
+  const { userData } = appStore();
 
-	const { theme, changeTheme } = useTheme();
-	const [currentTime, setCurrentTime] = useState(new Date());
+  const { theme, changeTheme } = useTheme();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-	useEffect(() => {
-		const timer = setInterval(() => {
-			setCurrentTime(new Date());
-		}, 1000); // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update time every second
 
-		return () => clearInterval(timer); // Cleanup on unmount
-	}, []);
+    return () => clearInterval(timer); // Cleanup on unmount
+  }, []);
 
-	return (
-		<>
-			<div className='text-white w-full bg-primary/50 py-1 px-3 text-center'>
-				{format(currentTime, 'dd MMM yyyy, hh:mm:ss a')}
-			</div>
+  return (
+    <>
+      <div className="text-white w-full bg-primary/50 py-1 px-3 text-center">
+        {format(currentTime, "dd MMM yyyy, hh:mm:ss a")}
+      </div>
 
-			<header
-				className={`p-4`}
-				style={{
-					backgroundColor:
-						theme === 'blue'
-							? '#3b82f6'
-							: theme === 'red'
-							? '#ef4444'
-							: theme === 'green'
-							? '#10b981'
-							: theme === 'purple'
-							? '#e424e4'
-							: '#f1f5f9',
-				}}
-			>
-				<div className='flex justify-between items-center'>
-					{/* Logo section */}
-					<div className='flex items-center space-x-4'>
-						<h1 className='text-white font-bold text-xl'>
-							Internet Banking -{' '}
-							<span className='capitalize'>
-								{pathname.split('/')[1]?.replace('-', ' ')}
-								{pathname.split('/')?.length > 2 ? ' / ' : ' '}
-								{pathname.split('/')[2]?.replace('-', ' ')}
-							</span>
-						</h1>
-					</div>
+      <header
+        className={`p-4`}
+        style={{
+          backgroundColor:
+            theme === "blue"
+              ? "#3b82f6"
+              : theme === "red"
+              ? "#ef4444"
+              : theme === "green"
+              ? "#10b981"
+              : theme === "purple"
+              ? "#6b46c1"
+              : "#f1f5f9",
+        }}
+      >
+        <div className="flex justify-between items-center">
+          {/* Logo section */}
+          <div className="flex items-center space-x-4">
+            <h1 className="text-white font-bold text-xl">
+              Internet Banking -{" "}
+              <span className="capitalize">
+                {pathname.split("/")[1]?.replace("-", " ")}
+                {pathname.split("/")?.length > 2 ? " / " : " "}
+                {pathname.split("/")[2]?.replace("-", " ")}
+              </span>
+            </h1>
+          </div>
 
-					{/* Menu section 
+          {/* Menu section 
         <nav className="space-x-6">
           <a href="/" className="text-white hover:underline">Home</a>
           <a href="/about" className="text-white hover:underline">About</a>
           <a href="/contact" className="text-white hover:underline">Contact</a>
         </nav>
 */}
-					{/* Time and Theme Dropdown */}
-					<div className='flex items-center space-x-4'>
-						<p className='text-white font-semibold flex items-center gap-2'>
-							<UserCircle className='h-5 w-5' />
+          {/* Time and Theme Dropdown */}
+          <div className="flex items-center space-x-4">
+            <p className="text-white font-semibold flex items-center gap-2">
+              <UserCircle className="h-5 w-5" />
 
-							{userData?.userRec?.pUserName}
-						</p>
+              {userData?.userRec?.pUserName}
+            </p>
 
-						<Select value={theme} onValueChange={(value) => changeTheme(value)}>
-							<SelectTrigger>
-								<SelectValue placeholder='Theme' />
-							</SelectTrigger>
+            <Select value={theme} onValueChange={(value) => changeTheme(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Theme" />
+              </SelectTrigger>
 
-							<SelectContent>
-								<SelectGroup>
-									<SelectItem value='purple'>Purple</SelectItem>
-									<SelectItem value='blue'>Blue</SelectItem>
-									<SelectItem value='red'>Red</SelectItem>
-									<SelectItem value='green'>Green</SelectItem>
-								</SelectGroup>
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
-			</header>
-		</>
-	);
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="purple">Purple</SelectItem>
+                  <SelectItem value="blue">Blue</SelectItem>
+                  <SelectItem value="red">Red</SelectItem>
+                  <SelectItem value="green">Green</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </header>
+    </>
+  );
 };
 
 export default Navbar;
