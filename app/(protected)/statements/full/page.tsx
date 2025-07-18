@@ -1,303 +1,384 @@
-'use client';
+"use client";
 
-import { format } from 'date-fns';
-import { useState } from 'react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { format } from "date-fns";
+import { useState } from "react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 // form
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 // icons
-import { Save } from 'lucide-react';
+import { Save } from "lucide-react";
 
 // query
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 // components
-import { Loading } from '@/components/Loader';
-import { Paginate } from '@/components/Paginate';
-import { StatementPDF } from '@/components/StatementPDF';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator'; // Add Separator component
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { Loading } from "@/components/Loader";
+import { Paginate } from "@/components/Paginate";
+import { StatementPDF } from "@/components/StatementPDF";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from '@/components/ui/form';
-
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table';
-
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // utils
-import { formatCurrency } from '@/utils/formatNumber';
+import { formatCurrency } from "@/utils/formatNumber";
 
 // store
-import { appStore } from '@/store';
+import { appStore } from "@/store";
 
 // services
-import { getAccountHistory, ReturnAcctDetails2 } from '@/services/api';
+import { getAccountHistory, ReturnAcctDetails2 } from "@/services/apiAuth";
 
 export default function FullStatement() {
-	const { userData } = appStore();
+  const { userData } = appStore();
+  const [accountHistory, setAccountHistory] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
+  const [error, setError] = useState<string>("");
 
-	const [accountHistory, setAccountHistory] = useState<any[]>([]);
-	const [items, setItems] = useState<any[]>([]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-accounts"],
+    queryFn: () =>
+      ReturnAcctDetails2(
+        2,
+        userData?.userRec,
+        userData?.acctCollection?.AcctStruct
+      ),
+    enabled: !!userData?.acctCollection?.AcctStruct,
+  });
 
-	const { data, isLoading } = useQuery({
-		queryKey: ['my-accounts'],
-		queryFn: () =>
-			ReturnAcctDetails2(
-				2,
-				userData?.userRec,
-				userData?.acctCollection?.AcctStruct
-			),
-		enabled: !!userData?.acctCollection?.AcctStruct,
-	});
+  const accounts = userData?.acctCollection || [];
 
-		const accounts = userData.acctCollection
+  const fullStatementSchema = z.object({
+    accountNumber: z.string().min(1, "Please enter your account"),
+    startDate: z.string({
+      required_error: "Please enter the start date",
+    }),
+    endDate: z.string({
+      required_error: "Please enter the end date",
+    }),
+  });
 
-	const fullStatementSchema = z.object({
-		account: z.string().min(1, 'Please enter your account'),
-		startDate: z.string({
-			required_error: 'Please enter the start date',
-		}),
-		endDate: z.string({
-			required_error: 'Please enter the end date',
-		}),
-	});
+  const defaultValues = {
+    accountNumber: "",
+    startDate: "",
+    endDate: "",
+  };
 
-	const defaultValues = {
-		account: '',
-		startDate: '',
-		endDate: '',
-	};
+  const methods = useForm({
+    defaultValues,
+    resolver: zodResolver(fullStatementSchema),
+    mode: "onChange",
+  });
 
-	const methods = useForm({
-		defaultValues,
-		resolver: zodResolver(fullStatementSchema),
-		mode: 'onChange',
-	});
+  const { handleSubmit, control } = methods;
 
-	const { handleSubmit, control } = methods;
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data: any) =>
+      getAccountHistory(data.accountNumber, data.startDate, data.endDate),
+    onSuccess: (res: any) => {
+      console.log("STATEMENT!", res);
+      setError(""); // Clear any previous errors
 
-	const { mutate, isPending } = useMutation({
-		mutationFn: (data: any) =>
-			getAccountHistory(data.account, data.startDate, data.endDate),
-		onSuccess: (res: any) => {
-			setAccountHistory(res.data);
-			setItems(res.data.slice(0, 10));
-		},
-	});
+      // Check if the response was successful
+      if (res.success && res.data) {
+        if (res.data.length === 0) {
+          setError("No transactions found for the selected date range.");
+          setAccountHistory([]);
+          setItems([]);
+          return;
+        }
 
-	const handlePageChange = (page: number) => {
-		const offset = (page - 1) * 10;
-		const newItems = accountHistory?.slice(offset, offset + 10);
-		setItems(newItems);
-	};
+        // For full statement, we don't filter - we show all transactions
+        setAccountHistory(res.data);
+        setItems(res.data.slice(0, 10));
+      } else {
+        // Handle error case
+        console.error("Failed to fetch account history:", res.errorMessage);
+        setError(
+          res.errorMessage ||
+            "Failed to fetch account history. Please try again."
+        );
+        setAccountHistory([]);
+        setItems([]);
+      }
+    },
+    onError: (error: any) => {
+      console.error("Mutation error:", error);
+      setError(
+        "An error occurred while fetching account history. Please try again."
+      );
+      setAccountHistory([]);
+      setItems([]);
+    },
+  });
 
-	const onSubmit = async (data: z.infer<typeof fullStatementSchema>) => {
-		const formattedData = {
-			...data,
-			startDate: format(new Date(data.startDate), 'yyyy-MM-dd'),
-			endDate: format(new Date(data.endDate), 'yyyy-MM-dd'),
-		};
+  const handlePageChange = (page: number) => {
+    const offset = (page - 1) * 10;
+    const newItems = accountHistory?.slice(offset, offset + 10);
+    setItems(newItems);
+  };
 
-		mutate(formattedData);
-	};
+  const onSubmit = async (data: z.infer<typeof fullStatementSchema>) => {
+    const formattedData = {
+      ...data,
+      startDate: format(new Date(data.startDate), "yyyy-MM-dd"),
+      endDate: format(new Date(data.endDate), "yyyy-MM-dd"),
+    };
+    mutate(formattedData);
+  };
 
-	if (isLoading) return <Loading />;
+  // Calculate totals for summary
+  const totalCredits = accountHistory
+    .filter((txn) => txn.COD_DRCR === "CR")
+    .reduce((sum, txn) => sum + (Number(txn.AMT_TXN) || 0), 0);
 
-	return (
-		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='text-2xl font-bold'>Full Statement</h2>
+  const totalDebits = accountHistory
+    .filter((txn) => txn.COD_DRCR === "DR")
+    .reduce((sum, txn) => sum + (Number(txn.AMT_TXN) || 0), 0);
 
-			{accountHistory.length === 0 && (
-				<Form {...methods}>
-					<form
-						onSubmit={handleSubmit(onSubmit)}
-						className='space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6'
-					>
-						<FormField
-							control={control}
-							name='account'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Select Account</FormLabel>
-									<FormControl>
-										<Select value={field.value} onValueChange={field.onChange}>
-											<SelectTrigger>
-												<SelectValue placeholder='Select account' />
-											</SelectTrigger>
-											<SelectContent>
-												{accounts.map((account: any, index: number) => (
-													<SelectItem key={index} value={account.accountNumber}>
-														{account.accountNumber} -{' '}
-														{formatCurrency(Number(account.availBalance) || 0)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</FormControl>
+  if (isLoading) return <Loading />;
 
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+  return (
+    <main className="h-full w-full flex flex-col gap-6 items-center md:justify-center">
+      <h2 className="text-2xl font-bold">Full Statement</h2>
 
-						<FormField
-							control={control}
-							name='startDate'
-							render={({ field }) => (
-								<FormItem className='flex flex-col w-full'>
-									<FormLabel>Start Date</FormLabel>
-									<Input
-										{...field}
-										placeholder='Enter your start date'
-										type='date'
-									/>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+      {error && (
+        <Alert variant="destructive" className="w-[90%] md:w-1/2">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-						<FormField
-							control={control}
-							name='endDate'
-							render={({ field }) => (
-								<FormItem className='flex flex-col w-full'>
-									<FormLabel>End Date</FormLabel>
-									<Input
-										{...field}
-										placeholder='Enter your end date'
-										type='date'
-									/>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+      {accountHistory.length === 0 && (
+        <Form {...methods}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-3 w-[90%] md:w-1/2 border border-border rounded-md p-6"
+          >
+            <FormField
+              control={control}
+              name="accountNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Account</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account: any, index: number) => (
+                          <SelectItem key={index} value={account.accountNumber}>
+                            {account.accountNumber} -{" "}
+                            {formatCurrency(Number(account.availBalance) || 0)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col w-full">
+                  <FormLabel>Start Date</FormLabel>
+                  <Input
+                    {...field}
+                    placeholder="Enter your start date"
+                    type="date"
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col w-full">
+                  <FormLabel>End Date</FormLabel>
+                  <Input
+                    {...field}
+                    placeholder="Enter your end date"
+                    type="date"
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Loading..." : "Submit"}
+            </Button>
+          </form>
+        </Form>
+      )}
 
-						<Button type='submit' className='w-full' disabled={isPending}>
-							Submit
-						</Button>
-					</form>
-				</Form>
-			)}
+      {accountHistory.length > 0 && (
+        <div className="w-full text-center mb-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Statement Details</CardTitle>
+              <PDFDownloadLink
+                document={<StatementPDF accountHistory={accountHistory} />}
+                fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
+                className="w-36"
+              >
+                <Button className="flex gap-2 items-center font-bold w-full">
+                  Download
+                  <Save className="h-4 w-4" />
+                </Button>
+              </PDFDownloadLink>
+            </CardHeader>
+            <CardContent>
+              <Separator className="my-4" />
+              <div className="w-full flex justify-between my-6">
+                <div className="flex flex-col items-start">
+                  <p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
+                  <p>
+                    Opening Balance:{" "}
+                    {formatCurrency(Number(accountHistory[0].OPENING_BAL) || 0)}
+                  </p>
+                  <p>
+                    Available Balance:{" "}
+                    {formatCurrency(Number(accountHistory[0].CLOSING_BAL) || 0)}
+                  </p>
+                  <p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
+                  <p>
+                    Statement Period: {accountHistory[0].pSTART_DATE} -{" "}
+                    {accountHistory[0].END_DATE}
+                  </p>
+                  <p>Total Transactions: {accountHistory.length}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <p>{accountHistory[0].NAM_CUST_FULL}</p>
+                  <p>{accountHistory[0].address}</p>
+                </div>
+              </div>
 
-			{accountHistory.length > 0 && (
-				<div className='w-full text-center mb-4'>
-					<Card>
-						<CardHeader>
-							<CardTitle>Statement Details</CardTitle>
+              {/* Transaction Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+                <Card className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Total Credits
+                    </p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {formatCurrency(totalCredits)}
+                    </p>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Total Debits
+                    </p>
+                    <p className="text-lg font-semibold text-red-600">
+                      {formatCurrency(totalDebits)}
+                    </p>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Net Movement
+                    </p>
+                    <p
+                      className={`text-lg font-semibold ${
+                        totalCredits - totalDebits >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(totalCredits - totalDebits)}
+                    </p>
+                  </div>
+                </Card>
+              </div>
 
-							<PDFDownloadLink
-								document={<StatementPDF accountHistory={accountHistory} />}
-								fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
-								className='w-36'
-							>
-								<Button className='flex gap-2 items-center font-bold w-full'>
-									Download
-									<Save className='h-4 w-4' />
-								</Button>
-							</PDFDownloadLink>
-						</CardHeader>
-
-						<CardContent>
-							<Separator className='my-4' /> {/* Adding a Separator */}
-							<div className='w-full flex justify-between my-6'>
-								<div className='flex flex-col items-start'>
-									<p>Account No: {accountHistory[0].COD_ACCT_NO}</p>
-									<p>
-										Opening Balance:{' '}
-										{formatCurrency(accountHistory[0].OPENING_BAL)}
-									</p>
-									<p>
-										Available Balance:{' '}
-										{formatCurrency(accountHistory[0].CLOSING_BAL)}
-									</p>
-									<p>Account Type: {accountHistory[0].NAM_PRODUCT}</p>
-									<p>
-										Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
-										{accountHistory[0].END_DATE}
-									</p>
-									<p>Total Transactions: {accountHistory.length}</p>
-								</div>
-
-								<div className='flex flex-col items-end'>
-									<p>{accountHistory[0].NAM_CUST_FULL}</p>
-									<p>{accountHistory[0].address}</p>
-								</div>
-							</div>
-							<Separator className='my-4' /> {/* Adding another Separator */}
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Account Number</TableHead>
-										<TableHead>Narration</TableHead>
-										<TableHead>Transaction Date</TableHead>
-										<TableHead>Credit Amount</TableHead>
-										<TableHead>Debit Amount</TableHead>
-										<TableHead>Running Balance</TableHead>
-									</TableRow>
-								</TableHeader>
-
-								<TableBody className='text-left'>
-									{items.map((account: any, index: number) => (
-										<TableRow key={index}>
-											<TableCell>{account.COD_ACCT_NO}</TableCell>
-											<TableCell>{account.TXT_TXN_DESC}</TableCell>
-											<TableCell>{account.DAT_TXN}</TableCell>
-											<TableCell>
-												{account.COD_DRCR === 'CR'
-													? formatCurrency(account.AMT_TXN)
-													: '-'}
-											</TableCell>
-											<TableCell>
-												{account.COD_DRCR === 'DR'
-													? formatCurrency(account.AMT_TXN)
-													: '-'}
-											</TableCell>
-											<TableCell>
-												{formatCurrency(account.RUNNING_BAL)}
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
-
-					<div className='float-right my-3'>
-						<Paginate
-							totalItems={accountHistory?.length}
-							onPageChange={handlePageChange}
-						/>
-					</div>
-				</div>
-			)}
-		</main>
-	);
+              <Separator className="my-4" />
+              <Table>
+                <TableHeader className="bg-background">
+                  <TableRow>
+                    <TableHead>Account Number</TableHead>
+                    <TableHead>Narration</TableHead>
+                    <TableHead>Transaction Date</TableHead>
+                    <TableHead>Credit Amount</TableHead>
+                    <TableHead>Debit Amount</TableHead>
+                    <TableHead>Running Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="text-left">
+                  {items.map((account: any, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell>{account.COD_ACCT_NO}</TableCell>
+                      <TableCell>{account.TXT_TXN_DESC}</TableCell>
+                      <TableCell>{account.DAT_TXN}</TableCell>
+                      <TableCell>
+                        {account.COD_DRCR === "CR" ? (
+                          <span className="text-green-600 font-medium">
+                            {formatCurrency(Number(account.AMT_TXN) || 0)}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {account.COD_DRCR === "DR" ? (
+                          <span className="text-red-600 font-medium">
+                            {formatCurrency(Number(account.AMT_TXN) || 0)}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(Number(account.RUNNING_BAL) || 0)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <div className="float-right my-3">
+            <Paginate
+              totalItems={accountHistory?.length}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }

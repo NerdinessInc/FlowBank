@@ -227,7 +227,7 @@ const LoginForm = () => {
               />
 
               <Button className="w-full font-semibold mt-3" type="submit">
-                {authUserMutation.isPending ? <Loading /> : "Login"}
+                {authUserMutation.isPending ? 'Loading...' : "Login"}
               </Button>
             </form>
           </Form>

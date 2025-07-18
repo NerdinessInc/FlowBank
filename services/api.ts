@@ -3,7 +3,7 @@ import WebClasses from '@/utils/webClasses';
 
 const webClasses = new WebClasses();
 
-// access code
+// access code - done
 export const getAccessCode = async () => {
 	const body = `<ReturnGetThreeCodes xmlns="http://con.Ibplc.org/"><UIx>xxx</UIx></ReturnGetThreeCodes>`;
 
@@ -24,7 +24,7 @@ export const getAccessCode = async () => {
 	}
 };
 
-// login user
+// login user - done
 export const authUser = async (values: any) => {
 	const authUserBody = `
 	<ReturnAuthuser xmlns="http://con.Ibplc.org/">
@@ -725,6 +725,7 @@ export const doNIPTransferReversal = async (userRec: any, values: any) => {
 	}
 };
 
+//statement - done
 export const getAccountHistory = async (
 	acctno: string,
 	startdate: string,
