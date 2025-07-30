@@ -52,7 +52,7 @@ const Navbar = () => {
               : theme === "green"
               ? "#10b981"
               : theme === "purple"
-              ? "#6b46c1"
+              ? "#e424e4"
               : "#f1f5f9",
         }}
       >

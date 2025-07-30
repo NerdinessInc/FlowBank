@@ -4,7 +4,7 @@ const Footer = () => {
   const { theme } = useTheme(); // Access the current theme from context
 
   const themeColors: { [key: string]: string } = {
-    purple: "#6b46c1", // Hex code for purple-700
+    purple: "#e424e4", // Hex code for purple-700
     blue: "#3b82f6", // Hex code for blue-700
     red: "#ef4444", // Hex code for red-700
     green: "#10b981", // Hex code for green-700

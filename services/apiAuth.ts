@@ -53,9 +53,12 @@ export const authUser = async (values: any) => {
       password: webClasses.encryptText(values.password),
       accessCode: webClasses.encryptText(values.accessCode),
       mthree: {
-        char1: "U3KVfKhwG2o=",
-        char2: "fveXoNA7GCg=",
-        char3: "uvtVsVop6ds=",
+        // char1: "U3KVfKhwG2o=",
+        // char2: "fveXoNA7GCg=",
+        // char3: "uvtVsVop6ds=",
+        char1: webClasses.encryptText(values.access.char1),
+        char2: webClasses.encryptText(values.access.char2),
+        char3: webClasses.encryptText(values.access.char3),
         retMsg: values.access.retMsg,
         bool: values.access.bool,
         valid: values.access.valid,
@@ -323,6 +326,31 @@ export const getAccountHistory = async (
       success: false,
       errorMessage:
         "Failed to retrieve account history details. Please try again.",
+    };
+  }
+};
+
+
+// ────────────────────────────────────────────────────────────
+// GET NEFT BRANCHES
+export const getNeftBanks = async () => {
+  try {
+    const response = await api.get("/nibss/neft-banks");
+    const result = response.data;
+
+    if (!Array.isArray(result)) {
+      throw new Error("Invalid response format");
+    }
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error("NEFT branches fetch error:", error);
+    return {
+      success: false,
+      errorMessage: "Failed to fetch NEFT branches. Please try again.",
     };
   }
 };

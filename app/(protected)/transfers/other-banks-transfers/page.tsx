@@ -52,11 +52,17 @@ import { formatCurrency } from "@/utils/formatNumber";
 // services
 import {
   ReturnAcctDetails2,
-  getNeftBranches,
+  // getNeftBanks,
   returnNameEnquiry,
   // ReturngetOTUP,
   returnPutXrefDetails,
 } from "@/services/api";
+
+import {
+  getNeftBanks,
+  // ReturngetOTUP,
+  // returnPutXrefDetails,
+} from "@/services/apiAuth";
 
 export default function ThirdPartyTransfers() {
   const { userData, accessCode } = appStore();
@@ -105,9 +111,9 @@ export default function ThirdPartyTransfers() {
   }, []);
 
   // get banks
-  const { data: neftBranches, isLoading: isLoadingNeftBranches } = useQuery({
-    queryKey: ["neft-branches"],
-    queryFn: getNeftBranches,
+  const { data: neftBanks, isLoading: isLoadingNeftBanks } = useQuery({
+    queryKey: ["neft-banks"],
+    queryFn: getNeftBanks,
   });
 
   // send otp
@@ -204,7 +210,7 @@ export default function ThirdPartyTransfers() {
           ?.slice(1)
           .find(
             (account: any) =>
-              account.AccountNumber.toString() === watch("sourceAccount")
+              account?.AccountNumber?.toString() === watch("sourceAccount")
           )
       );
     }
@@ -255,7 +261,7 @@ export default function ThirdPartyTransfers() {
 
   console.log(errors);
 
-  const banks = neftBranches?.data?.filter((bank: any) => {
+  const banks = neftBanks?.data?.filter((bank: any) => {
     const [start, end] = bankCategory.split("-").map(Number);
 
     const categoryNum = Number(bank.category);
@@ -263,7 +269,7 @@ export default function ThirdPartyTransfers() {
     return categoryNum >= start && categoryNum <= end;
   });
 
-  if (isLoading || isLoadingNeftBranches) return <Loading />;
+  if (isLoading || isLoadingNeftBanks) return <Loading />;
 
   return (
     <main className="h-full w-full flex flex-col gap-6 items-center md:justify-center">
@@ -388,7 +394,7 @@ export default function ThirdPartyTransfers() {
                         </SelectTrigger>
                         <SelectContent>
                           {banks?.map((bank: any, index: number) => (
-                            <SelectItem key={index} value={bank.bankcode}>
+                            <SelectItem key={index} value={bank.bankCode}>
                               {bank.bankName}
                             </SelectItem>
                           ))}
