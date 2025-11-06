@@ -28,44 +28,16 @@ export const getApiToken = async () => {
 };
 
 // ────────────────────────────────────────────────────────────
-// GET ACCESS CODE
-export const getAccessCode = async () => {
-  try {
-    const response = await api.get("/user/getMthree");
-    console.log(response);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      errorMessage: "Something went wrong!",
-    };
-  }
-};
-
-// ────────────────────────────────────────────────────────────
 // AUTHENTICATE USER
 export const authUser = async (values: any) => {
   try {
     const payload = {
-      sessionId: "123:01",
-      remote_IP: "10.0.0.1",
+      sessionId: values.sessionId,
+      remote_IP: values.remote_IP || "0.0.0.0",
       userName: webClasses.encryptText(values.userName),
       password: webClasses.encryptText(values.password),
-      accessCode: webClasses.encryptText(values.accessCode),
-      mthree: {
-        // char1: "U3KVfKhwG2o=",
-        // char2: "fveXoNA7GCg=",
-        // char3: "uvtVsVop6ds=",
-        char1: webClasses.encryptText(values.access.char1),
-        char2: webClasses.encryptText(values.access.char2),
-        char3: webClasses.encryptText(values.access.char3),
-        retMsg: values.access.retMsg,
-        bool: values.access.bool,
-        valid: values.access.valid,
-        cac: values.access.cac || "",
-      },
     };
-    const response = await api.post("/user/AuthenticateUser", payload);
+    const response = await api.post("/user/new/AuthenticateUser", payload);
     const result = response.data;
     const loginResult = {
       success: !result.oraresp?.errors,
@@ -330,7 +302,6 @@ export const getAccountHistory = async (
   }
 };
 
-
 // ────────────────────────────────────────────────────────────
 // GET NEFT BRANCHES
 export const getNeftBanks = async () => {
@@ -352,5 +323,88 @@ export const getNeftBanks = async () => {
       success: false,
       errorMessage: "Failed to fetch NEFT branches. Please try again.",
     };
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// NAME ENQUIRY
+export const returnNameEnquiry = async (values: {
+  channelCode: string;
+  accountNumber: string;
+  destinationInstitutionCode: string;
+  transactionId: string;
+}) => {
+  try {
+    const response = await api.post("/nibss/nameEnquiry", values);
+    const result = response.data;
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error("Name enquiry error:", error);
+    return {
+      success: false,
+      errorMessage: "Failed to fetch Account details. Please try again.",
+    };
+  }
+};
+
+//BALANCE ENQIRY
+export const balanceEnquiry = async (payload: {
+  channelCode: string;
+  targetAccountName: string;
+  targetAccountNumber: string;
+  targetBankVerificationNumber: string;
+  authorizationCode: string;
+  destinationInstitutionCode: string;
+  billerId: string;
+  transactionId: string;
+}) => {
+  try {
+    const response = await api.post("/nibss/balanceEnquiry", payload);
+    return response.data;
+  } catch (error: any) {
+    console.log("Balance Enquiry Error: ", error?.response || error);
+    throw error;
+  }
+};
+
+//FUND TRANSFER
+export const fundTransfer = async (values: {
+  sourceInstitutionCode: string;
+  amount: number;
+  beneficiaryAccountName: string;
+  beneficiaryAccountNumber: string;
+  beneficiaryBankVerificationNumber: string;
+  beneficiaryKYCLevel: number;
+  channelCode: string;
+  originatorAccountName: string;
+  originatorAccountNumber: string;
+  originatorBankVerificationNumber: string | number;
+  originatorKYCLevel: number;
+  destinationInstitutionCode: string | number;
+  mandateReferenceNumber: string;
+  nameEnquiryRef: string;
+  originatorNarration: string;
+  paymentReference: string;
+  transactionId: string;
+  transactionLocation: string;
+  beneficiaryNarration: string;
+  billerId: string;
+  initiatorAccountNumber: string;
+  initiatorAccountName: string;
+}) => {
+  try {
+    console.log("Sending fundTransfer with:", values);
+
+    const response = await api.post("/nibss/fundsTransfer", values);
+    console.log("fundTransfer response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("fundTransfer error status:", error.response?.status);
+    console.error("fundTransfer error data:", error.response?.data);
+    console.error("fundTransfer error message:", error.message);
+    throw error;
   }
 };

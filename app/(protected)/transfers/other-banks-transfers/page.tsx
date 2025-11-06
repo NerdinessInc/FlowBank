@@ -1,25 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-// forms
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
-// query
 import { useQuery, useMutation } from "@tanstack/react-query";
-
-// icons
-import { HelpCircle } from "lucide-react";
-
-// components
 import { Loading } from "@/components/Loader";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import { Label } from '@/components/ui/label';
-
 import {
   Form,
   FormControl,
@@ -28,7 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
 import {
   Select,
   SelectContent,
@@ -36,50 +23,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-// store
 import { appStore } from "@/store";
-
-// utils
 import { formatCurrency } from "@/utils/formatNumber";
-
-// services
 import {
   ReturnAcctDetails2,
-  // getNeftBanks,
-  returnNameEnquiry,
-  // ReturngetOTUP,
-  returnPutXrefDetails,
-} from "@/services/api";
-
-import {
   getNeftBanks,
-  // ReturngetOTUP,
-  // returnPutXrefDetails,
+  returnNameEnquiry,
+  balanceEnquiry,
+  fundTransfer,
 } from "@/services/apiAuth";
+import { generateTransactionId } from "@/utils/generateTransactionId";
+import { generatePaymentReference } from "@/utils/paymentReference";
 
 export default function ThirdPartyTransfers() {
-  const { userData, accessCode } = appStore();
-
+  const { userData } = appStore();
   const [step, setStep] = useState(1);
-  const [bankCategory, setBankCategory] = useState<"2-4" | "7-9" | "10-11">(
-    "2-4"
-  );
-
-  const [notificationMode, setNotificationMode] = useState<
-    "Default_Option" | "Email_Option" | "SMS_Option" | "GSM_and_EMAIL"
-  >("Default_Option");
-
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
-  const [sessionID, setSessionID] = useState(null);
+  const [balance, setBalance] = useState<string | null>(null);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [nameEnquiryResult, setNameEnquiryResult] = useState<any | null>(null);
+  const [nameEnquiryError, setNameEnquiryError] = useState<string | null>(null);
 
-  // get account details
+  // Fetch accounts
   const { data, isLoading } = useQuery({
     queryKey: ["my-accounts"],
     queryFn: () =>
@@ -92,70 +57,66 @@ export default function ThirdPartyTransfers() {
   });
 
   const accounts = userData?.acctCollection || [];
-  console.log(userData);
+  console.log(accounts)
 
-  // session id
-  useEffect(() => {
-    async function fetchSessionID() {
-      const res = await fetch("/api/getSessionId");
-
-      if (res.ok) {
-        const data = await res.json();
-        setSessionID(data.sessionID);
-      } else {
-        console.error("Failed to fetch session ID");
-      }
-    }
-
-    fetchSessionID();
-  }, []);
-
-  // get banks
+  // Fetch NEFT banks
   const { data: neftBanks, isLoading: isLoadingNeftBanks } = useQuery({
     queryKey: ["neft-banks"],
     queryFn: getNeftBanks,
   });
 
-  // send otp
+  // Balance enquiry mutation
+  const { mutate: balanceEnquiryMutate, isPending: isBalanceEnquiryPending } =
+    useMutation({
+      mutationFn: balanceEnquiry,
+      onSuccess: (res: any) => {
+        setBalance(res?.availableBalance || "Balance retrieved successfully");
+        setBalanceError(null);
+      },
+      onError: (error: any) => {
+        setBalanceError("Failed to fetch balance. Please try again.");
+      },
+    });
+
+  // Fund transfer mutation
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: any) => returnPutXrefDetails(data.userRec, data.values),
+    mutationFn: fundTransfer,
     onSuccess: (res: any) => {
-      console.log(res, "hi");
+      setStep(1);
+      methods.reset();
+      setNameEnquiryResult(null);
+      setBalance(null);
+      setBalanceError(null);
+      setNameEnquiryError(null);
+      alert("Transfer successful!"); // Replace with react-hot-toast in production
+    },
+    onError: (error: any) => {
+      alert(`Transfer failed: ${error.message}`); // Replace with react-hot-toast
     },
   });
 
+  // Zod schema aligned with fundTransfer payload
   const thirdPartyTransfersSchema = z.object({
     sourceAccount: z.string().min(1, "Please select your source account"),
-    dailyTransferLimit: z
-      .number()
-      .min(1, "Please enter your daily transfer limit"),
-    // beneficiary: z.string().min(1, 'Please enter your beneficiary'),
-    bankCode: z.string().min(1, "Please enter your bank code"),
+    dailyTransferLimit: z.number().min(0, "Daily transfer limit required"),
+    bankCode: z.string().min(1, "Please select a destination bank"),
     destinationAccountNumber: z
       .string()
       .regex(/^\d+$/, "Account number must contain only numeric values")
       .min(10, "Account number must be at least 10 digits long"),
-    // destinationAccountName: z
-    // 	.string()
-    // 	.min(1, 'Please enter your destination account name'),
-    transferAmount: z.coerce
-      .number()
-      .min(1, "Please enter your transfer amount"),
-    transferCode: z.string().min(3, "Please enter your transfer code"),
-    token: z.string().min(1, "Please enter your Token"),
-    // narration: z.string().min(1, 'Please enter your narration'),
+    destinationAccountName: z.string().optional(),
+    transferAmount: z.coerce.number().min(1, "Please enter a transfer amount"),
+    narration: z.string().optional(),
   });
 
+  // Default values
   const defaultValues = {
     sourceAccount: "",
     dailyTransferLimit: 0,
-    beneficiary: "",
     bankCode: "",
     destinationAccountNumber: "",
     destinationAccountName: "",
     transferAmount: 0,
-    transferCode: "",
-    token: "",
     narration: "",
   };
 
@@ -175,58 +136,122 @@ export default function ThirdPartyTransfers() {
     formState: { errors },
   } = methods;
 
-  // get daily transfer limit with source account
+  // Set daily transfer limit
   useEffect(() => {
-    if (watch("sourceAccount")?.length >= 10) {
+    const sourceAccount = watch("sourceAccount");
+    if (sourceAccount && sourceAccount.length >= 10) {
       const limit = userData?.pLimitsObject?.find(
-        (limit: any) => limit.accountnumber === watch("sourceAccount")
+        (limit: any) => limit.accountnumber === sourceAccount
       )?.interBankLimit;
-
-      setValue("dailyTransferLimit", Number(limit));
+      setValue("dailyTransferLimit", Number(limit) || 0);
     }
-  }, [setValue, userData, watch("sourceAccount")]);
+  }, [watch("sourceAccount"), userData, setValue]);
 
-  // name enquiry
-  const { data: nameEnquiry, isLoading: isLoadingNameEnquiry } = useQuery({
+  // Name enquiry query
+  const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry } = useQuery({
     queryKey: [
       "name-enquiry",
       watch("bankCode"),
       watch("destinationAccountNumber"),
     ],
     queryFn: () =>
-      returnNameEnquiry(watch("destinationAccountNumber"), watch("bankCode")),
+      returnNameEnquiry({
+        channelCode: "1",
+        accountNumber: watch("destinationAccountNumber"),
+        destinationInstitutionCode: watch("bankCode"),
+        transactionId: generateTransactionId(),
+      }),
     enabled:
       !!watch("bankCode") &&
       /^[0-9]+$/.test(watch("destinationAccountNumber")) &&
       watch("destinationAccountNumber").length >= 10,
+    onError: (error: any) => {
+      setNameEnquiryError("Invalid account number or bank. Please try again.");
+    },
   });
 
-  console.log(nameEnquiry);
-
+  // Update name enquiry result
   useEffect(() => {
-    if (watch("sourceAccount").length >= 10) {
-      setSelectedAccount(
-        userData?.acctCollection
-          ?.slice(1)
-          .find(
-            (account: any) =>
-              account?.AccountNumber?.toString() === watch("sourceAccount")
-          )
+    if (nameEnquiryData?.success) {
+      setNameEnquiryResult(nameEnquiryData);
+      setNameEnquiryError(null);
+      setValue(
+        "destinationAccountName",
+        nameEnquiryData.data?.accountName
       );
     }
-  }, [watch("sourceAccount"), userData]);
+  }, [nameEnquiryData, setValue]);
 
+  // Trigger balance enquiry for source account
+  useEffect(() => {
+    if (nameEnquiryResult?.success) {
+      balanceEnquiryMutate({
+        channelCode: nameEnquiryResult.data?.channelCode,
+        targetAccountName: nameEnquiryResult.data?.accountName,
+        targetAccountNumber: nameEnquiryResult.data?.accountNumber,
+        targetBankVerificationNumber:
+          nameEnquiryResult.data?.bankVerificationNumber,
+        authorizationCode: `MA-${watch(
+          "destinationAccountNumber"
+        )}-2022315-53097`,
+        destinationInstitutionCode:
+          nameEnquiryResult.data?.destinationInstitutionCode,
+        billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
+        transactionId: generateTransactionId(),
+      });
+    }
+  }, [nameEnquiryResult, balanceEnquiryMutate, watch]);
+
+  // Set selected account
+  useEffect(() => {
+    const sourceAccount = watch("sourceAccount");
+    if (sourceAccount && sourceAccount.length >= 10) {
+      const selected = accounts?.find(
+        (account: any) => account.accountNumber?.toString() === sourceAccount
+      );
+      if (selected) {
+        setSelectedAccount({
+          ...selected,
+          accountName: selected.accountName,
+        });
+      } else {
+        setSelectedAccount(null);
+      }
+    } else {
+      setSelectedAccount(null);
+    }
+  }, [watch("sourceAccount"), accounts]);
+
+  // Next step validation
   const nextStep = async () => {
     const fields = {
       1: ["sourceAccount", "dailyTransferLimit"],
-      2: ["bankCode", "destinationAccount"],
-      3: ["transferAmount", "transferCode"],
+      2: ["bankCode", "destinationAccountNumber"],
+      3: ["transferAmount"],
     }[step];
 
     const isValid = await trigger(fields as any);
+    if (!isValid) return;
 
-    if (isValid) {
+    // Manual validation for transfer amount vs daily limit (step 3)
+    if (step === 3) {
+      const amount = getValues("transferAmount") as number;
+      const limit = getValues("dailyTransferLimit") as number;
+      if (amount > limit) {
+        methods.setError("transferAmount", {
+          type: "manual",
+          message: "Amount exceeds daily transfer limit",
+        });
+        return;
+      }
+    }
+
+    if (step !== 2 || nameEnquiryResult?.success) {
       setStep((prev) => Math.min(prev + 1, 4));
+    } else if (step === 2 && !nameEnquiryResult?.success) {
+      setNameEnquiryError(
+        "Please wait for account verification or correct the details."
+      );
     }
   };
 
@@ -235,39 +260,60 @@ export default function ThirdPartyTransfers() {
   };
 
   const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
+    // Guard: Prevent submission if required data missing
+    if (!nameEnquiryResult?.success || !selectedAccount) {
+      alert(
+        "Please go back to step 1 & 2 to select source account and verify beneficiary."
+      );
+      return;
+    }
+
+    // Manual validation: Amount <= daily limit
+    if (data.transferAmount > data.dailyTransferLimit) {
+      alert("Transfer amount exceeds daily transfer limit.");
+      return;
+    }
+
     const newData = {
-      ...data,
-      DestinationInstitutionCode: data.bankCode,
-      DestAcct: data.destinationAccountNumber,
-      // BeneficiaryAccountName: data.destinationAccountName,
-      SessionId: sessionID,
-      Amount: data.transferAmount,
-      email: selectedAccount?.Email,
-      gsm: selectedAccount?.Gsm,
-      // Narration: data.narration,
-      TransferCode: data.transferCode,
-      sendOption: notificationMode,
-      theTree: {
-        Char1: accessCode?.Char1,
-        Char2: accessCode?.Char2,
-        Char3: accessCode?.Char3,
-        bool: accessCode?.bool,
-        retMsg: accessCode?.retMsg,
-      },
+      sourceInstitutionCode: "999998",
+      amount: data.transferAmount,
+      beneficiaryAccountName: nameEnquiryResult.data.accountName,
+      beneficiaryAccountNumber: nameEnquiryResult.data.accountNumber,
+      beneficiaryBankVerificationNumber:
+        nameEnquiryResult.data.bankVerificationNumber,
+      beneficiaryKYCLevel: nameEnquiryResult.data.kycLevel,
+      channelCode: nameEnquiryResult.data.channelCode,
+      originatorAccountName: selectedAccount.accountName,
+      originatorAccountNumber: selectedAccount.accountNumber,
+      originatorBankVerificationNumber: "33333333333",
+      originatorKYCLevel: "1",
+      destinationInstitutionCode:
+        nameEnquiryResult.data.destinationInstitutionCode,
+      mandateReferenceNumber: `MA-${
+        nameEnquiryResult.data.accountNumber
+      }-2022315-53097`,
+      nameEnquiryRef:
+        nameEnquiryResult.data.transactionId || generateTransactionId(),
+      originatorNarration:
+        data.narration ||
+        `Transfer to ${nameEnquiryResult.data.accountName}`,
+      paymentReference: generatePaymentReference(),
+      transactionId: generateTransactionId(),
+      transactionLocation: "0.0.0.0,0.0.0.0",
+      beneficiaryNarration:
+        data.narration ||
+        `Transfer to ${nameEnquiryResult.data.accountName}`,
+      billerId:
+        nameEnquiryResult.data.billerId,
+      initiatorAccountName: selectedAccount.accountName,
+      initiatorAccountNumber: selectedAccount.accountNumber,
     };
 
-    console.log("Processing transfer:", newData);
+    console.log("Submitting transfer:", newData);
+    mutate(newData);
   };
 
-  console.log(errors);
-
-  const banks = neftBanks?.data?.filter((bank: any) => {
-    const [start, end] = bankCategory.split("-").map(Number);
-
-    const categoryNum = Number(bank.category);
-
-    return categoryNum >= start && categoryNum <= end;
-  });
+  const banks = neftBanks?.data;
 
   if (isLoading || isLoadingNeftBanks) return <Loading />;
 
@@ -279,12 +325,24 @@ export default function ThirdPartyTransfers() {
         <h3 className="text-lg">Step {step} of 4</h3>
         <p className="text-gray-600">
           {step === 1 &&
-            "Select your source account and enter daily transfer limit"}
+            "Select your source account and view daily transfer limit"}
           {step === 2 && "Enter beneficiary and destination account"}
-          {step === 3 && "Enter transfer amount and code"}
+          {step === 3 && "Enter transfer amount and narration"}
           {step === 4 && "Confirm transfer details"}
         </p>
       </div>
+
+      {balance && step === 2 && (
+        <div className="text-green-600">
+          Source Account Balance: {formatCurrency(Number(balance) || 0)}
+        </div>
+      )}
+      {balanceError && step === 2 && (
+        <div className="text-red-600">{balanceError}</div>
+      )}
+      {nameEnquiryError && step === 2 && (
+        <div className="text-red-600">{nameEnquiryError}</div>
+      )}
 
       <Form {...methods}>
         <form
@@ -308,10 +366,13 @@ export default function ThirdPartyTransfers() {
                           <SelectValue placeholder="Select Source Account" />
                         </SelectTrigger>
                         <SelectContent>
-                          {accounts?.map((account: any, index: number) => (
+                          {accounts?.map((account: any) => (
                             <SelectItem
-                              key={index}
-                              value={account.accountNumber}
+                              key={
+                                account.accountNumber?.toString() ||
+                                Math.random().toString()
+                              }
+                              value={account.accountNumber?.toString()}
                             >
                               {account.accountNumber} -{" "}
                               {formatCurrency(
@@ -336,7 +397,7 @@ export default function ThirdPartyTransfers() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your daily transfer limit"
+                        placeholder="Daily transfer limit"
                         disabled
                       />
                     </FormControl>
@@ -349,35 +410,6 @@ export default function ThirdPartyTransfers() {
 
           {step === 2 && (
             <>
-              {/* select bank category */}
-              <div className="flex flex-col justify-between">
-                <div className="text-sm font-semibold">
-                  Select Bank Category
-                </div>
-
-                <Select
-                  onValueChange={(newValue) => {
-                    setBankCategory(newValue as any);
-                  }}
-                  value={bankCategory}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Bank Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2-4">
-                      Commercial Banks/Discount Houses
-                    </SelectItem>
-                    <SelectItem value="7-9">
-                      Merchant/Microfinance Banks
-                    </SelectItem>
-                    <SelectItem value="10-11">
-                      Mobile Money Operators/Virtual Banks
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <FormField
                 control={control}
                 name="bankCode"
@@ -393,8 +425,11 @@ export default function ThirdPartyTransfers() {
                           <SelectValue placeholder="Select Destination Bank" />
                         </SelectTrigger>
                         <SelectContent>
-                          {banks?.map((bank: any, index: number) => (
-                            <SelectItem key={index} value={bank.bankCode}>
+                          {banks?.map((bank: any) => (
+                            <SelectItem
+                              key={bank.bankCode}
+                              value={bank.bankCode}
+                            >
                               {bank.bankName}
                             </SelectItem>
                           ))}
@@ -415,14 +450,22 @@ export default function ThirdPartyTransfers() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your destination account"
-                        disabled={isLoadingNameEnquiry}
+                        placeholder="Enter destination account"
+                        disabled={
+                          isLoadingNameEnquiry || isBalanceEnquiryPending
+                        }
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {nameEnquiryResult?.success && (
+                <div className="text-gray-600">
+                  Account Name: {nameEnquiryResult.data?.accountName}
+                </div>
+              )}
             </>
           )}
 
@@ -437,7 +480,8 @@ export default function ThirdPartyTransfers() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your transfer amount"
+                        placeholder="Enter transfer amount"
+                        type="number"
                       />
                     </FormControl>
                     <FormMessage />
@@ -447,119 +491,17 @@ export default function ThirdPartyTransfers() {
 
               <FormField
                 control={control}
-                name="transferCode"
+                name="narration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-end gap-2">
-                      <p> Transfer Code</p>
-
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button type="button" className="mt-6">
-                            <HelpCircle className="h-5 w-5 text-gray-500" />
-                          </button>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                          side="right"
-                          className="w-[200px] text-sm"
-                        >
-                          <p>
-                            Enter the{" "}
-                            <span className="font-bold">
-                              {accessCode.Char1}
-                            </span>
-                            ,
-                            <span className="font-bold">
-                              {" "}
-                              {accessCode.Char2}
-                            </span>
-                            , and
-                            <span className="font-bold">
-                              {" "}
-                              {accessCode.Char3}
-                            </span>{" "}
-                            Characters of your transfer code.
-                          </p>
-                        </PopoverContent>
-                      </Popover>
-                    </FormLabel>
+                    <FormLabel>Remark</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your transfer code"
-                        disabled
-                      />
+                      <Input {...field} placeholder="Enter narration" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
-                  <Select
-                    onValueChange={(newValue) => {
-                      const currentValue = getValues("transferCode");
-                      setValue("transferCode", (currentValue || "") + newValue);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="*" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="*">*</SelectItem>
-                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-1">
-                  <Select
-                    onValueChange={(newValue) => {
-                      const currentValue = getValues("transferCode");
-                      setValue("transferCode", (currentValue || "") + newValue);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="*" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="*">*</SelectItem>
-                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-1">
-                  <Select
-                    onValueChange={(newValue) => {
-                      const currentValue = getValues("transferCode");
-                      setValue("transferCode", (currentValue || "") + newValue);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="*" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="*">*</SelectItem>
-                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
             </>
           )}
 
@@ -570,85 +512,14 @@ export default function ThirdPartyTransfers() {
                 {formatCurrency(getValues("transferAmount"))} from your account{" "}
                 {getValues("sourceAccount")} to{" "}
                 {getValues("destinationAccountNumber")},{" "}
-                {getValues("destinationAccountName")}.
+                {nameEnquiryResult?.data?.accountName}.
               </p>
+              {balance && (
+                <p className="mb-4">
+                  Source Account Balance: {formatCurrency(Number(balance) || 0)}
+                </p>
+              )}
               <p className="font-bold mb-4">Do you want to proceed?</p>
-
-              {/* select email or sms */}
-              <div className="flex gap-3 justify-between items-center">
-                <div className="flex flex-col flex-1">
-                  <Select
-                    onValueChange={(newValue) => {
-                      setNotificationMode(newValue as any);
-                    }}
-                    value={notificationMode}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Notification Mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Default_Option">
-                        Default Option
-                      </SelectItem>
-                      <SelectItem value="Email_Option">Email</SelectItem>
-                      <SelectItem value="SMS_Option">SMS</SelectItem>
-                      <SelectItem value="GSM_and_EMAIL">
-                        GSM and Email
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() =>
-                    mutate({
-                      userRec: userData?.userRec,
-                      values: {
-                        DestinationInstitutionCode: getValues("bankCode"),
-                        DestAcct: getValues("destinationAccountNumber"),
-                        BeneficiaryAccountName: getValues(
-                          "destinationAccountName"
-                        ),
-                        SessionId: sessionID,
-                        Amount: getValues("transferAmount"),
-                        email: selectedAccount?.Email,
-                        gsm: selectedAccount?.Gsm,
-                        Narration: getValues("narration"),
-                        TransferCode: getValues("transferCode"),
-                        sendOption: notificationMode,
-                        trfType: "InterBankNeft",
-                        theTree: {
-                          Char1: accessCode?.Char1,
-                          Char2: accessCode?.Char2,
-                          Char3: accessCode?.Char3,
-                          bool: accessCode?.bool,
-                          retMsg: accessCode?.retMsg,
-                        },
-                      },
-                    })
-                  }
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isPending}
-                >
-                  Send
-                </Button>
-              </div>
-
-              <FormField
-                control={control}
-                name="token"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>Token</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter your Token" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
           )}
 
@@ -665,8 +536,17 @@ export default function ThirdPartyTransfers() {
             )}
 
             {step < 4 && (
-              <Button type="button" className="ml-auto" onClick={nextStep}>
-                Next
+              <Button
+                type="button"
+                className="ml-auto"
+                onClick={nextStep}
+                disabled={
+                  isPending || isLoadingNameEnquiry || isBalanceEnquiryPending
+                }
+              >
+                {isLoadingNameEnquiry || isBalanceEnquiryPending
+                  ? "Loading..."
+                  : "Next"}
               </Button>
             )}
 
@@ -675,8 +555,8 @@ export default function ThirdPartyTransfers() {
                 <Button type="button" onClick={previousStep} variant="outline">
                   Cancel
                 </Button>
-                <Button type="submit" className="ml-auto">
-                  Confirm Transfer
+                <Button type="submit" className="ml-auto" disabled={isPending}>
+                  {isPending ? "Processing..." : "Confirm Transfer"}
                 </Button>
               </>
             )}

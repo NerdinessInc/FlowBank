@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // icons
-import { HelpCircle } from "lucide-react";
+import { EyeOff, HelpCircle, Eye } from "lucide-react";
 
 // form
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ import {
 
 // store
 import { appStore } from "@/store";
-import { getAccessCode, authUser } from "@/services/apiAuth";
+import { authUser } from "@/services/apiAuth";
 import { getApiToken } from "@/utils/axiosInstance";
 import { Loading } from "@/components/Loader";
 
@@ -46,21 +46,20 @@ import { Loading } from "@/components/Loader";
 
 const LoginForm = () => {
   // const router = useRouter();
-  const { login, setAccessCode } = appStore();
+  const { login } = appStore();
 
   const { toast } = useToast();
 
-  const [accessCodeChars, setAccessCodeChars] = useState<any>({});
   const [sessionID, setSessionID] = useState(null);
+  const [remoteIP, setRemoteIP] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginSchema = z.object({
-    accessCode: z.string().min(3, "Please enter your access code"),
     password: z.string().min(1, "Please enter your password"),
     userName: z.string().min(1, "Please enter your username"),
   });
 
   const defaultValues = {
-    accessCode: "",
     password: "",
     userName: "",
   };
@@ -71,35 +70,23 @@ const LoginForm = () => {
   });
 
   useEffect(() => {
-    getApiToken()
-      .then((token) => {
+    async function init() {
+      try {
+        const token = await getApiToken();
         console.log("Token received:", token);
-      })
-      .catch((err) => {
-        console.error("Error getting token:", err);
-      });
-  }, []);
 
-  useEffect(() => {
-    getAccessCode().then((res: any) => {
-      setAccessCodeChars(res.data);
-      setAccessCode(res.data);
-    });
-  }, [setAccessCode]);
-
-  useEffect(() => {
-    async function fetchSessionID() {
-      const res = await fetch("/api/getSessionId");
-
-      if (res.ok) {
+        const res = await fetch("/api/getSessionId");
         const data = await res.json();
+        console.log("Session data:", data);
+
         setSessionID(data.sessionID);
-      } else {
-        console.error("Failed to fetch session ID");
+        setRemoteIP(data.ip);
+      } catch (err) {
+        console.error("Error initializing:", err);
       }
     }
 
-    fetchSessionID();
+    init();
   }, []);
 
   const { handleSubmit } = methods;
@@ -126,8 +113,8 @@ const LoginForm = () => {
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     await authUserMutation.mutateAsync({
       ...data,
-      access: accessCodeChars,
-      sid: sessionID,
+      sessionId: sessionID,
+      remote_IP: remoteIP,
     });
   };
 
@@ -136,7 +123,7 @@ const LoginForm = () => {
       <Card className="w-full max-w-sm py-6">
         <CardContent className="grid gap-4">
           <Form {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={methods.control}
                 name="userName"
@@ -161,73 +148,37 @@ const LoginForm = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your password"
-                        type="password"
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute inset-y-0 right-3 flex items-center"
+                        >
+                          {showPassword ? (
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <EyeOff className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={methods.control}
-                name="accessCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-grow">
-                        <FormLabel>Access Code</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter your access code"
-                            required
-                          />
-                        </FormControl>
-                      </div>
-
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button type="button" className="mt-6">
-                            <HelpCircle className="h-5 w-5 text-gray-500" />
-                          </button>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                          side="right"
-                          className="w-[200px] text-sm"
-                        >
-                          <p>
-                            Enter the{" "}
-                            <span className="font-bold">
-                              {accessCodeChars?.char1}
-                            </span>
-                            ,
-                            <span className="font-bold">
-                              {" "}
-                              {accessCodeChars?.char2}
-                            </span>
-                            , and
-                            <span className="font-bold">
-                              {" "}
-                              {accessCodeChars?.char3}
-                            </span>{" "}
-                            Characters of your access code.
-                          </p>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button className="w-full font-semibold mt-3" type="submit">
-                {authUserMutation.isPending ? 'Loading...' : "Login"}
+              <Button
+                className="w-full font-semibold"
+                type="submit"
+                disabled={!sessionID || authUserMutation.isPending}
+              >
+                {authUserMutation.isPending ? "Loading..." : "Login"}
               </Button>
             </form>
           </Form>

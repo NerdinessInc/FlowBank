@@ -30,7 +30,7 @@ export default function AuthLayout({
         backgroundPosition: "center",
       }}
     >
-      <header className="py-1 px-3 ">
+      <header className="py-1 px-3 bg-[#f2f2f2]">
         <p className="text-sm font-semibold">
           {format(currentTime, "eeee, d MMMM, yyyy, h:mm:ss")}
         </p>
