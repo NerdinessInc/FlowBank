@@ -31,21 +31,91 @@ import { appStore } from "@/store";
 import { formatCurrency } from "@/utils/formatNumber";
 
 // services
-// import { ReturnAcctDetails2 } from '@/services/apiAuth'; // ⛔️ COMMENTED OUT
+import { ReturnAcctDetails2 } from "@/services/apiAuth";
 
 export default function Dashboard() {
   const { userData, appData } = appStore();
-
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updatedAccounts, setUpdatedAccounts] = useState<any[]>([]);
 
+  // Fetch account details for all accounts on mount
   useEffect(() => {
-    if (userData?.acctCollection) {
-      setSelectedAccount(userData.acctCollection[0] || null);
-    }
+    const fetchAllAccountDetails = async () => {
+      if (!userData?.userRec || !userData?.acctCollection?.length) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const userRec = {
+          accCode: userData.userRec.accCode || "",
+          puserName: userData.userRec.puserName || "",
+        };
+
+        // Fetch details for each account
+        const accountPromises = userData.acctCollection.map(async (account: any) => {
+          const payload = [{
+            customerID: account.customerID, // Adjust based on your acctCollection structure
+            accountNumber: account.accountNumber,
+          }];
+          const response = await ReturnAcctDetails2(userRec, payload);
+          return response;
+        });
+
+        const responses = await Promise.all(accountPromises);
+
+        // Process all responses
+        const newAccounts = responses.flatMap((response, index) => {
+          if (response.success && response.data) {
+            return response.data.map((account: any) => ({
+              accountNumber: account.accountNumber,
+              accountName: account.description,
+              availBal: account.availBal,
+              namCurrency: account.currency,
+              codAcctType: account.type === "Current" ? "CK" : "SV", // Adjust based on type
+              CustomerID: userData.acctCollection[index].customerID, // Preserve original data
+            }));
+          } else {
+            console.error(
+              `Failed to fetch details for account ${userData.acctCollection[index].accountNumber}:`,
+              response.errorMessage
+            );
+            return [userData.acctCollection[index]]; // Fallback to original account data
+          }
+        });
+
+        setUpdatedAccounts(newAccounts);
+
+        // Set the first account as selected if available
+        if (newAccounts.length > 0) {
+          setSelectedAccount(newAccounts[0]);
+        }
+
+        // Optionally update the store if needed
+        // appStore.setUserData({ ...userData, acctCollection: newAccounts });
+      } catch (err) {
+        console.error("Error fetching account details:", err);
+        setError("Something went wrong while fetching account details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllAccountDetails();
   }, [userData]);
 
+  // Fallback to userData.acctCollection if updatedAccounts is empty
+  useEffect(() => {
+    if (userData?.acctCollection && !selectedAccount && !updatedAccounts.length) {
+      setSelectedAccount(userData.acctCollection[0] || null);
+    }
+  }, [userData, selectedAccount, updatedAccounts]);
+
   const selectAccountByNumber = (accountNumber: string) => {
-    const selected = userData.acctCollection.find(
+    const selected = (updatedAccounts.length ? updatedAccounts : userData.acctCollection).find(
       (account: { accountNumber: string }) =>
         account.accountNumber === accountNumber
     );
@@ -54,6 +124,7 @@ export default function Dashboard() {
 
   console.log("User Data Returned", userData);
   console.log("App Data", appData);
+  console.log("Updated Accounts", updatedAccounts);
 
   const advertImages: string[] = [
     "https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -61,7 +132,12 @@ export default function Dashboard() {
     "https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ];
 
+  if (isLoading) return <Loading />;
+  if (error) return <div className="text-red-500">{error}</div>;
   if (!userData || !userData.acctCollection) return <Loading />;
+
+  // Use updatedAccounts if available, else fallback to userData.acctCollection
+  const accountsToDisplay = updatedAccounts.length ? updatedAccounts : userData.acctCollection;
 
   return (
     <main className="h-full w-full flex flex-col gap-6">
@@ -79,9 +155,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {/* {selectedAccount
-                ? formatCurrency(selectedAccount?.availBal)
-                : "0.00"} */}
               {formatCurrency(Number(selectedAccount?.availBal) || 0.0)}
             </div>
           </CardContent>
@@ -130,7 +203,7 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {userData.acctCollection.map((account: any, index: number) => (
+                {accountsToDisplay.map((account: any, index: number) => (
                   <TableRow
                     key={index}
                     onClick={() => selectAccountByNumber(account.accountNumber)}

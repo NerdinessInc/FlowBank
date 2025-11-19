@@ -29,73 +29,149 @@ import {
   ReturnAcctDetails2,
   getNeftBanks,
   returnNameEnquiry,
-  balanceEnquiry,
+  // balanceEnquiry,
   fundTransfer,
 } from "@/services/apiAuth";
 import { generateTransactionId } from "@/utils/generateTransactionId";
 import { generatePaymentReference } from "@/utils/paymentReference";
+import TransactionModal from "@/components/TransactionModal"; // Import the modal
 
 export default function ThirdPartyTransfers() {
   const { userData } = appStore();
   const [step, setStep] = useState(1);
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [balanceError, setBalanceError] = useState<string | null>(null);
+  // const [balance, setBalance] = useState<string | null>(null);
+  // const [balanceError, setBalanceError] = useState<string | null>(null);
   const [nameEnquiryResult, setNameEnquiryResult] = useState<any | null>(null);
   const [nameEnquiryError, setNameEnquiryError] = useState<string | null>(null);
-
-  // Fetch accounts
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-accounts"],
-    queryFn: () =>
-      ReturnAcctDetails2(
-        2,
-        userData?.userRec,
-        userData?.acctCollection?.AcctStruct
-      ),
-    enabled: !!userData?.acctCollection?.AcctStruct,
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "success" | "failed";
+    transactionData?: any;
+  }>({
+    isOpen: false,
+    type: "success",
   });
 
-  const accounts = userData?.acctCollection || [];
-  console.log(accounts)
+  // Fetch accounts for all accounts in userData.acctCollection
+  const {
+    data: accountData,
+    isLoading: isLoadingAccounts,
+    error: accountsError,
+  } = useQuery({
+    queryKey: ["my-accounts"],
+    queryFn: async () => {
+      if (!userData?.userRec || !userData?.acctCollection?.length) {
+        return { success: false, data: [] };
+      }
 
-  // Fetch NEFT banks
+      const userRec = {
+        accCode: userData.userRec.accCode || "",
+        puserName: userData.userRec.puserName || "",
+      };
+
+      const accountPromises = userData.acctCollection.map(
+        async (account: any) => {
+          const payload = [
+            {
+              customerId: account.customerID,
+              accountNumber: account.accountNumber,
+            },
+          ];
+          const response = await ReturnAcctDetails2(userRec, payload);
+          return response;
+        }
+      );
+
+      const responses = await Promise.all(accountPromises);
+
+      const accounts = responses.flatMap((response, index) => {
+        if (response.success && response.data) {
+          return response.data.map((account: any) => ({
+            accountNumber: account.accountNumber,
+            accountName: account.description,
+            availBal: account.availBal,
+            namCurrency: account.currency,
+            codAcctType: account.type === "Current" ? "CK" : "SV",
+            CustomerID: userData.acctCollection[index].CustomerID,
+          }));
+        }
+        console.error(
+          `Failed to fetch details for account ${userData.acctCollection[index].accountNumber}:`,
+          response.errorMessage
+        );
+        return [userData.acctCollection[index]];
+      });
+
+      return { success: true, data: accounts };
+    },
+    enabled: !!userData?.userRec && !!userData?.acctCollection?.length,
+  });
+
+  const accounts = accountData?.success
+    ? accountData.data
+    : userData?.acctCollection || [];
+
   const { data: neftBanks, isLoading: isLoadingNeftBanks } = useQuery({
     queryKey: ["neft-banks"],
     queryFn: getNeftBanks,
   });
 
-  // Balance enquiry mutation
-  const { mutate: balanceEnquiryMutate, isPending: isBalanceEnquiryPending } =
-    useMutation({
-      mutationFn: balanceEnquiry,
-      onSuccess: (res: any) => {
-        setBalance(res?.availableBalance || "Balance retrieved successfully");
-        setBalanceError(null);
-      },
-      onError: (error: any) => {
-        setBalanceError("Failed to fetch balance. Please try again.");
-      },
-    });
+  // const { mutate: balanceEnquiryMutate, isPending: isBalanceEnquiryPending } = useMutation({
+  //   mutationFn: balanceEnquiry,
+  //   onSuccess: (res: any) => {
+  //     setBalance(res?.availableBalance || "Balance retrieved successfully");
+  //     setBalanceError(null);
+  //   },
+  //   onError: (error: any) => {
+  //     setBalanceError("Failed to fetch balance. Please try again.");
+  //   },
+  // });
 
-  // Fund transfer mutation
   const { mutate, isPending } = useMutation({
     mutationFn: fundTransfer,
-    onSuccess: (res: any) => {
-      setStep(1);
-      methods.reset();
-      setNameEnquiryResult(null);
-      setBalance(null);
-      setBalanceError(null);
-      setNameEnquiryError(null);
-      alert("Transfer successful!"); // Replace with react-hot-toast in production
+    onSuccess: (data: any) => {
+      // Only treat as success if the bank returns responseCode '00'
+      if (data?.responseCode === "00" || data?.responseCode === "0") {
+        setModalState({
+          isOpen: true,
+          type: "success",
+          transactionData: {
+            amount: data.amount || data.transferAmount,
+            beneficiaryAccountName:
+              data.beneficiaryAccountName || data.accountName,
+            beneficiaryAccountNumber:
+              data.beneficiaryAccountNumber || data.accountNumber,
+            paymentReference: data.paymentReference,
+            transactionId: data.transactionId || data.transactionReference,
+          },
+        });
+        setStep(1);
+        methods.reset();
+        setNameEnquiryResult(null);
+        setNameEnquiryError(null);
+      } else {
+        // Business logic failure (e.g., "Insufficient funds", "Duplicate transaction", etc.)
+        const errorMessage =
+          data?.responseMessage || data?.message || "Transaction failed";
+        setModalState({
+          isOpen: true,
+          type: "failed",
+          transactionData: { errorMessage },
+        });
+      }
     },
     onError: (error: any) => {
-      alert(`Transfer failed: ${error.message}`); // Replace with react-hot-toast
+      // Network error, timeout, 500, etc.
+      const errorMessage = error?.message || "Network error. Please try again.";
+      setModalState({
+        isOpen: true,
+        type: "failed",
+        transactionData: { errorMessage },
+      });
     },
   });
-
-  // Zod schema aligned with fundTransfer payload
   const thirdPartyTransfersSchema = z.object({
     sourceAccount: z.string().min(1, "Please select your source account"),
     dailyTransferLimit: z.number().min(0, "Daily transfer limit required"),
@@ -109,7 +185,6 @@ export default function ThirdPartyTransfers() {
     narration: z.string().optional(),
   });
 
-  // Default values
   const defaultValues = {
     sourceAccount: "",
     dailyTransferLimit: 0,
@@ -136,7 +211,6 @@ export default function ThirdPartyTransfers() {
     formState: { errors },
   } = methods;
 
-  // Set daily transfer limit
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
@@ -147,7 +221,6 @@ export default function ThirdPartyTransfers() {
     }
   }, [watch("sourceAccount"), userData, setValue]);
 
-  // Name enquiry query
   const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry } = useQuery({
     queryKey: [
       "name-enquiry",
@@ -170,39 +243,33 @@ export default function ThirdPartyTransfers() {
     },
   });
 
-  // Update name enquiry result
   useEffect(() => {
     if (nameEnquiryData?.success) {
       setNameEnquiryResult(nameEnquiryData);
       setNameEnquiryError(null);
-      setValue(
-        "destinationAccountName",
-        nameEnquiryData.data?.accountName
-      );
+      setValue("destinationAccountName", nameEnquiryData.data?.accountName);
     }
   }, [nameEnquiryData, setValue]);
 
-  // Trigger balance enquiry for source account
-  useEffect(() => {
-    if (nameEnquiryResult?.success) {
-      balanceEnquiryMutate({
-        channelCode: nameEnquiryResult.data?.channelCode,
-        targetAccountName: nameEnquiryResult.data?.accountName,
-        targetAccountNumber: nameEnquiryResult.data?.accountNumber,
-        targetBankVerificationNumber:
-          nameEnquiryResult.data?.bankVerificationNumber,
-        authorizationCode: `MA-${watch(
-          "destinationAccountNumber"
-        )}-2022315-53097`,
-        destinationInstitutionCode:
-          nameEnquiryResult.data?.destinationInstitutionCode,
-        billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
-        transactionId: generateTransactionId(),
-      });
-    }
-  }, [nameEnquiryResult, balanceEnquiryMutate, watch]);
+  // useEffect(() => {
+  //   if (nameEnquiryResult?.success) {
+  //     balanceEnquiryMutate({
+  //       channelCode: nameEnquiryResult.data?.channelCode,
+  //       targetAccountName: nameEnquiryResult.data?.accountName,
+  //       targetAccountNumber: nameEnquiryResult.data?.accountNumber,
+  //       targetBankVerificationNumber:
+  //         nameEnquiryResult.data?.bankVerificationNumber,
+  //       authorizationCode: `MA-${watch(
+  //         "destinationAccountNumber"
+  //       )}-2022315-53097`,
+  //       destinationInstitutionCode:
+  //         nameEnquiryResult.data?.destinationInstitutionCode,
+  //       billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
+  //       transactionId: generateTransactionId(),
+  //     });
+  //   }
+  // }, [nameEnquiryResult, balanceEnquiryMutate, watch]);
 
-  // Set selected account
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
@@ -222,7 +289,6 @@ export default function ThirdPartyTransfers() {
     }
   }, [watch("sourceAccount"), accounts]);
 
-  // Next step validation
   const nextStep = async () => {
     const fields = {
       1: ["sourceAccount", "dailyTransferLimit"],
@@ -233,7 +299,6 @@ export default function ThirdPartyTransfers() {
     const isValid = await trigger(fields as any);
     if (!isValid) return;
 
-    // Manual validation for transfer amount vs daily limit (step 3)
     if (step === 3) {
       const amount = getValues("transferAmount") as number;
       const limit = getValues("dailyTransferLimit") as number;
@@ -260,53 +325,86 @@ export default function ThirdPartyTransfers() {
   };
 
   const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
-    // Guard: Prevent submission if required data missing
     if (!nameEnquiryResult?.success || !selectedAccount) {
-      alert(
-        "Please go back to step 1 & 2 to select source account and verify beneficiary."
-      );
+      setModalState({
+        isOpen: true,
+        type: "failed",
+        transactionData: {
+          errorMessage:
+            "Please complete steps 1 and 2 to select source account and verify beneficiary.",
+        },
+      });
       return;
     }
 
-    // Manual validation: Amount <= daily limit
     if (data.transferAmount > data.dailyTransferLimit) {
-      alert("Transfer amount exceeds daily transfer limit.");
+      setModalState({
+        isOpen: true,
+        type: "failed",
+        transactionData: {
+          errorMessage: "Transfer amount exceeds daily transfer limit.",
+        },
+      });
       return;
     }
+
+    const cleanedAccountName = selectedAccount.accountName
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // const newData = {
+    //   sourceInstitutionCode: "000525",
+    //   amount: data.transferAmount,
+    //   beneficiaryAccountName: nameEnquiryResult.data.accountName,
+    //   beneficiaryAccountNumber: nameEnquiryResult.data.accountNumber,
+    //   beneficiaryBankVerificationNumber:
+    //     nameEnquiryResult.data.bankVerificationNumber,
+    //   beneficiaryKYCLevel: nameEnquiryResult.data.kycLevel,
+    //   channelCode: nameEnquiryResult.data.channelCode,
+    //   originatorAccountName: cleanedAccountName,
+    //   originatorAccountNumber: selectedAccount.accountNumber,
+    //   originatorBankVerificationNumber: "33333333333",
+    //   originatorKYCLevel: "1",
+    //   destinationInstitutionCode:
+    //     nameEnquiryResult.data.destinationInstitutionCode,
+    //   mandateReferenceNumber: `MA-${nameEnquiryResult.data.accountNumber}-2022315-53097`,
+    //   nameEnquiryRef: nameEnquiryResult.data.sessionID,
+    //   originatorNarration:
+    //     data.narration || `Transfer to ${nameEnquiryResult.data.accountName}`,
+    //   paymentReference: generatePaymentReference(),
+    //   transactionId: generateTransactionId(),
+    //   transactionLocation: "1.38716,3.05117",
+    //   beneficiaryNarration:
+    //     data.narration || `Transfer to ${nameEnquiryResult.data.accountName}`,
+    //   billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
+    //   initiatorAccountName: cleanedAccountName,
+    //   initiatorAccountNumber: selectedAccount.accountNumber,
+    // };
 
     const newData = {
       sourceInstitutionCode: "999998",
-      amount: data.transferAmount,
-      beneficiaryAccountName: nameEnquiryResult.data.accountName,
-      beneficiaryAccountNumber: nameEnquiryResult.data.accountNumber,
-      beneficiaryBankVerificationNumber:
-        nameEnquiryResult.data.bankVerificationNumber,
-      beneficiaryKYCLevel: nameEnquiryResult.data.kycLevel,
-      channelCode: nameEnquiryResult.data.channelCode,
-      originatorAccountName: selectedAccount.accountName,
-      originatorAccountNumber: selectedAccount.accountNumber,
-      originatorBankVerificationNumber: "33333333333",
-      originatorKYCLevel: "1",
-      destinationInstitutionCode:
-        nameEnquiryResult.data.destinationInstitutionCode,
-      mandateReferenceNumber: `MA-${
-        nameEnquiryResult.data.accountNumber
-      }-2022315-53097`,
-      nameEnquiryRef:
-        nameEnquiryResult.data.transactionId || generateTransactionId(),
-      originatorNarration:
-        data.narration ||
-        `Transfer to ${nameEnquiryResult.data.accountName}`,
-      paymentReference: generatePaymentReference(),
-      transactionId: generateTransactionId(),
-      transactionLocation: "0.0.0.0,0.0.0.0",
+      amount: 100,
+      beneficiaryAccountName: "Ake Mobolaji & Temabo",
+      beneficiaryAccountNumber: "1780004070",
+      beneficiaryBankVerificationNumber: "22222222226",
+      beneficiaryKYCLevel: 1,
+      channelCode: 1,
+      originatorAccountName: "vee Test",
+      originatorAccountNumber: "0112345678",
+      originatorBankVerificationNumber: 33333333333,
+      originatorKYCLevel: 1,
+      destinationInstitutionCode: 999998,
+      mandateReferenceNumber: `MA-0112345678-2022315-53097`,
+      nameEnquiryRef: "999999191106195503191106195503",
+      originatorNarration: "Payment from 0112345678 to 1780004070 Test123 ",
+      paymentReference: "NIPMINI/828281672",
+      transactionId:  generateTransactionId(),
+      transactionLocation: "1.38716,3.05117",
       beneficiaryNarration:
-        data.narration ||
-        `Transfer to ${nameEnquiryResult.data.accountName}`,
-      billerId:
-        nameEnquiryResult.data.billerId,
-      initiatorAccountName: selectedAccount.accountName,
-      initiatorAccountNumber: selectedAccount.accountNumber,
+        "Payment from 0112345678 to 1780004070 Test123 ",
+      billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
+      initiatorAccountName: "Helen Test",
+      initiatorAccountNumber: "0912345678",
     };
 
     console.log("Submitting transfer:", newData);
@@ -315,7 +413,13 @@ export default function ThirdPartyTransfers() {
 
   const banks = neftBanks?.data;
 
-  if (isLoading || isLoadingNeftBanks) return <Loading />;
+  if (isLoadingAccounts || isLoadingNeftBanks) return <Loading />;
+  if (accountsError)
+    return (
+      <div className="text-red-500">
+        Error fetching accounts: {accountsError.message}
+      </div>
+    );
 
   return (
     <main className="h-full w-full flex flex-col gap-6 items-center md:justify-center">
@@ -332,14 +436,6 @@ export default function ThirdPartyTransfers() {
         </p>
       </div>
 
-      {balance && step === 2 && (
-        <div className="text-green-600">
-          Source Account Balance: {formatCurrency(Number(balance) || 0)}
-        </div>
-      )}
-      {balanceError && step === 2 && (
-        <div className="text-red-600">{balanceError}</div>
-      )}
       {nameEnquiryError && step === 2 && (
         <div className="text-red-600">{nameEnquiryError}</div>
       )}
@@ -375,9 +471,7 @@ export default function ThirdPartyTransfers() {
                               value={account.accountNumber?.toString()}
                             >
                               {account.accountNumber} -{" "}
-                              {formatCurrency(
-                                Number(account.availBalance) || 0
-                              )}
+                              {formatCurrency(Number(account.availBal) || 0)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -451,9 +545,7 @@ export default function ThirdPartyTransfers() {
                       <Input
                         {...field}
                         placeholder="Enter destination account"
-                        disabled={
-                          isLoadingNameEnquiry || isBalanceEnquiryPending
-                        }
+                        disabled={isLoadingNameEnquiry}
                       />
                     </FormControl>
                     <FormMessage />
@@ -514,9 +606,10 @@ export default function ThirdPartyTransfers() {
                 {getValues("destinationAccountNumber")},{" "}
                 {nameEnquiryResult?.data?.accountName}.
               </p>
-              {balance && (
+              {selectedAccount?.availBal && (
                 <p className="mb-4">
-                  Source Account Balance: {formatCurrency(Number(balance) || 0)}
+                  Source Account Balance:{" "}
+                  {formatCurrency(Number(selectedAccount.availBal) || 0)}
                 </p>
               )}
               <p className="font-bold mb-4">Do you want to proceed?</p>
@@ -540,13 +633,9 @@ export default function ThirdPartyTransfers() {
                 type="button"
                 className="ml-auto"
                 onClick={nextStep}
-                disabled={
-                  isPending || isLoadingNameEnquiry || isBalanceEnquiryPending
-                }
+                disabled={isPending || isLoadingNameEnquiry}
               >
-                {isLoadingNameEnquiry || isBalanceEnquiryPending
-                  ? "Loading..."
-                  : "Next"}
+                {isLoadingNameEnquiry ? "Loading..." : "Next"}
               </Button>
             )}
 
@@ -563,6 +652,14 @@ export default function ThirdPartyTransfers() {
           </div>
         </form>
       </Form>
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState({ ...modalState, isOpen: false })}
+        type={modalState.type}
+        transactionData={modalState.transactionData}
+      />
     </main>
   );
 }

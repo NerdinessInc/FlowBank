@@ -51,11 +51,11 @@ export const sidebarRoutes: Route[] = [
 				pathname: '/account-information/summary',
 				icon: <FileText className='h-4 w-4' />,
 			},
-			{
-				label: 'Details',
-				pathname: '/account-information/details',
-				icon: <Info className='h-4 w-4' />,
-			},
+			// {
+			// 	label: 'Details',
+			// 	pathname: '/account-information/details',
+			// 	icon: <Info className='h-4 w-4' />,
+			// },
 		],
 	},
 	{
@@ -90,11 +90,11 @@ export const sidebarRoutes: Route[] = [
 		pathname: '/transfers',
 		icon: <ArrowLeftRight className='h-4 w-4' />,
 		children: [
-			{
-				label: 'Third Party Transfers',
-				pathname: '/transfers/third-party-transfers',
-				icon: <ArrowLeftRight className='h-4 w-4' />,
-			},
+			// {
+			// 	label: 'Third Party Transfers',
+			// 	pathname: '/transfers/third-party-transfers',
+			// 	icon: <ArrowLeftRight className='h-4 w-4' />,
+			// },
 			{
 				label: 'Other Banks Transfers',
 				pathname: '/transfers/other-banks-transfers',

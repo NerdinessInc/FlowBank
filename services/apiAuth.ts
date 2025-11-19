@@ -37,7 +37,7 @@ export const authUser = async (values: any) => {
       userName: webClasses.encryptText(values.userName),
       password: webClasses.encryptText(values.password),
     };
-    const response = await api.post("/user/new/AuthenticateUser", payload);
+    const response = await api.post("user/new/AuthenticateUser", payload);
     const result = response.data;
     const loginResult = {
       success: !result.oraresp?.errors,
@@ -63,42 +63,33 @@ export const authUser = async (values: any) => {
 // ────────────────────────────────────────────────────────────
 // GET ACCOUNT DETAILS (REST VERSION of ReturnAcctDetails2)
 export const ReturnAcctDetails2 = async (
-  reqType: string,
-  userRec: { pAcessCode: string; pUserName: string },
+  userRec: { accCode: string; puserName: string },
   values: any
 ) => {
   try {
     const payload = {
-      ID: reqType,
-      CustomerID: values?.slice(1, 2)?.[0]?.CustomerID,
-      AccountNo: values?.slice(1, 2)?.[0]?.AccountNumber,
-      pacesscode: userRec.pAcessCode,
-      pUsername: userRec.pUserName,
+      customerId: values?.[0]?.customerID,
+      accountNumber: values?.[0]?.accountNumber,
+      accCode: "",
+      userName: userRec.puserName,
     };
-    const response = await api.post("/nibss/account", payload);
+    const response = await api.post("/nibss/account/details", payload);
     const rawData = response.data;
-    const parsedAccountDetails = rawData.rs?.string
-      ?.slice(1)
-      .map((accountString: string) => {
-        const [
-          accountNumber,
-          description,
-          bookBalance,
-          availBal,
-          uncleared,
-          currency,
-          type,
-        ] = accountString.split("|");
-        return {
-          accountNumber,
-          description,
-          bookBalance,
-          availBal,
-          uncleared,
-          currency,
-          type,
-        };
-      });
+    console.log("Account Details response:", rawData);
+
+    // Handle sample response structure
+    const parsedAccountDetails = rawData.rs?.map((account: any) => ({
+      accountNumber: account["Account Number"],
+      description: account["Account Title"],
+      bookBalance: account["Book Balance"],
+      availBal: account["Net Bal for Withdrawal"],
+      uncleared: account["Uncleared Funds(-) "],
+      currency: account["Account Currency"],
+      type: account["Account Title"].includes("Current")
+        ? "Current"
+        : "Savings",
+    }));
+
     return { success: true, data: parsedAccountDetails };
   } catch (error) {
     console.error("Account details fetch error:", error);
@@ -190,7 +181,7 @@ export const getAccountHistory = async (
             const parts = account.split("|");
 
             if (parts.length < 33) {
-              console.warn(
+              console.log(
                 `Account at index ${index} has insufficient parts:`,
                 parts.length
               );
@@ -273,7 +264,7 @@ export const getAccountHistory = async (
           }
 
           // If neither object nor string, log and return null
-          console.warn(
+          console.log(
             `Account at index ${index} has unexpected type:`,
             typeof account,
             account
@@ -303,7 +294,7 @@ export const getAccountHistory = async (
 };
 
 // ────────────────────────────────────────────────────────────
-// GET NEFT BRANCHES
+// GET NEFT BANKS
 export const getNeftBanks = async () => {
   try {
     const response = await api.get("/nibss/neft-banks");
@@ -318,10 +309,10 @@ export const getNeftBanks = async () => {
       data: result,
     };
   } catch (error) {
-    console.error("NEFT branches fetch error:", error);
+    console.error("NEFT banks fetch error:", error);
     return {
       success: false,
-      errorMessage: "Failed to fetch NEFT branches. Please try again.",
+      errorMessage: "Failed to fetch NEFT banks. Please try again.",
     };
   }
 };
@@ -399,12 +390,78 @@ export const fundTransfer = async (values: {
     console.log("Sending fundTransfer with:", values);
 
     const response = await api.post("/nibss/fundsTransfer", values);
-    console.log("fundTransfer response:", response.data);
+    console.log("fundTransfer response:", response);
     return response.data;
   } catch (error: any) {
-    console.error("fundTransfer error status:", error.response?.status);
-    console.error("fundTransfer error data:", error.response?.data);
-    console.error("fundTransfer error message:", error.message);
+    console.log("fundTransfer error status:", error.response?.status);
+    console.log("fundTransfer error data:", error.response?.data);
+    console.log("fundTransfer error message:", error.message);
+    console.log("fundTransfer error response:", error.response);
+    console.log("fundTransfer error:", error);
+    throw error;
+  }
+};
+
+//-------------------------------------------------------------------
+//INTERNAL (NOMASE)
+//NAME ENQUIRY
+export const returnNameEnquiryNomase = async (values: {
+  accountNumber: string;
+}) => {
+  try {
+    const response = await api.post(
+      `/nibss/getNameInquiry/${values.accountNumber}`
+    );
+    const result = response.data;
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error("Name enquiry error:", error);
+    return {
+      success: false,
+      errorMessage: "Failed to fetch Account details. Please try again.",
+    };
+
+  }
+};
+
+//INTERNAL TRANSFER
+export const internalTransfer = async (values: {
+  sourceInstitutionCode: string;
+  amount: number;
+  beneficiaryAccountName: string;
+  beneficiaryAccountNumber: string;
+  beneficiaryBankVerificationNumber: string;
+  beneficiaryKYCLevel: number;
+  channelCode: string;
+  originatorAccountName: string;
+  originatorAccountNumber: string;
+  originatorBankVerificationNumber: string | number;
+  originatorKYCLevel: number;
+  destinationInstitutionCode: string | number;
+  mandateReferenceNumber: string;
+  nameEnquiryRef: string;
+  originatorNarration: string;
+  paymentReference: string;
+  transactionId: string;
+  transactionLocation: string;
+  beneficiaryNarration: string;
+  billerId: string;
+  initiatorAccountNumber: string;
+  initiatorAccountName: string;
+}) => {
+  try {
+    console.log("Sending internalTransfer with:", values);
+
+    const response = await api.post("/nibss/thirdPartyTransfer", values);
+    console.log("internalTransfer response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("internalTransfer error status:", error.response?.status);
+    console.error("internalTransfer error data:", error.response?.data);
+    console.error("internalTransfer error message:", error.message);
     throw error;
   }
 };
