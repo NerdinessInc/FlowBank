@@ -119,22 +119,25 @@ const LoginForm = () => {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-center">
-      <Card className="w-full max-w-sm py-6">
+    <main className="w-full h-full flex items-center justify-start gap-[80px]">
+      <Card className="w-full max-w-[380px] py-12 bg-black/30 backdrop-blur-md border-2 border-white/40">
         <CardContent className="grid gap-4">
           <Form {...methods}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <h2 className="text-white text-[16px] uppercase text-center">
+                Online Banking
+              </h2>
               <FormField
                 control={methods.control}
                 name="userName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your username"
+                        placeholder="Username"
                         required
+                        className="border-2 border-white/40 bg-transparent text-white"
                       />
                     </FormControl>
                   </FormItem>
@@ -146,15 +149,14 @@ const LoginForm = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           {...field}
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
+                          placeholder="Password"
                           required
-                          className="pr-10"
+                          className="pr-10 border-2 border-white/40 bg-transparent text-white"
                         />
                         <button
                           type="button"
@@ -174,7 +176,7 @@ const LoginForm = () => {
               />
 
               <Button
-                className="w-full font-semibold"
+                className="w-full font-semibold bg-white text-[#9F1FEF] hover:bg-white/90 uppercase text-[14px]"
                 type="submit"
                 disabled={!sessionID || authUserMutation.isPending}
               >
@@ -184,6 +186,7 @@ const LoginForm = () => {
           </Form>
         </CardContent>
       </Card>
+      {/* <div className='bg-white w-[330px] p-[12px] rounded-md border-l-8 border-[#9F1FEF]'>Bank from home at anytime while doing anything with the best experience.</div> */}
     </main>
   );
 };

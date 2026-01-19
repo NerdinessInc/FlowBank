@@ -1,246 +1,205 @@
-'use client';
+"use client";
 
-// form
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-// hooks
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
 
-// query
-import { useMutation } from '@tanstack/react-query';
-
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useEffect } from "react";
 
-// services
-import { changePassword } from '@/services/api';
+import { appStore } from "@/store";
+import { changePassword } from "@/services/apiAuth";
 
-export default function Profile() {
-	const { toast } = useToast();
+const changePasswordSchema = z
+  .object({
+    userName: z.string().min(1, "Username is required"),
+    oldPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Must contain at least one special character"),
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
-	const [step, setStep] = useState(1);
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
-	const changePasswordSchema = z
-		.object({
-			username: z.string().min(1, 'Please enter your username'),
-			accessCode: z.string().min(1, 'Please enter your access code'),
-			oldPassword: z.string().min(1, 'Please enter your old password'),
-			newPassword: z.string().min(1, 'Please enter your new password'),
-			confirmPassword: z.string().min(1, 'Please confirm your new password'),
-		})
-		.refine((data) => data.newPassword === data.confirmPassword, {
-			message: "Passwords don't match",
-			path: ['confirmPassword'],
-		});
+export default function ChangePasswordForm() {
+  const { userData } = appStore();
+  const { toast } = useToast();
 
-	const defaultValues = {
-		username: '',
-		accessCode: '',
-		oldPassword: '',
-		newPassword: '',
-		confirmPassword: '',
-	};
+  const form = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      userName: "",
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+    mode: "onChange",
+  });
 
-	const methods = useForm({
-		defaultValues,
-		resolver: zodResolver(changePasswordSchema),
-		mode: 'onChange',
-	});
+  useEffect(() => {
+    if (userData?.userRec?.puserName) {
+      form.setValue("userName", userData.userRec.puserName);
+    }
+  }, [userData?.userRec?.puserName, form]);
 
-	const { handleSubmit, control, trigger } = methods;
+  const { mutate, isPending } = useMutation({
+    mutationFn: ({
+      userName,
+      oldPassword,
+      newPassword,
+    }: {
+      userName: string;
+      oldPassword: string;
+      newPassword: string;
+    }) => changePassword({ userName, oldPassword, newPassword }),
 
-	const nextStep = async () => {
-		const fields = {
-			1: ['username', 'accessCode'],
-			2: ['oldPassword'],
-			3: ['newPassword', 'confirmPassword'],
-		}[step];
+    onSuccess: (response: any) => {
+      console.log("Change Password API Response:", response);
 
-		const isValid = await trigger(fields as any);
+      // Axios wraps the response body in { data: ... }
+      // Your backend returns plain "true" on success
+      const success = response === true || response?.data === true;
 
-		if (isValid) {
-			setStep((prev) => Math.min(prev + 1, 3));
-		}
-	};
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Your password has been changed successfully.",
+        });
+        form.reset();
+      } else {
+        toast({
+          title: "Error",
+          description: response?.message || "Failed to change password.",
+          variant: "destructive",
+        });
+      }
+    },
 
-	const previousStep = () => {
-		setStep((prev) => Math.max(prev - 1, 1));
-	};
+    onError: (error: any) => {
+      console.error("Change Password Error:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    },
+  });
 
-	const { mutate, isPending } = useMutation({
-		mutationFn: (data: {
-			username: string;
-			accessCode: string;
-			newPassword: string;
-		}) => changePassword(data),
-		onSuccess: (res: any) => {
-			console.log(res);
+  const onSubmit = (values: ChangePasswordFormValues) => {
+    mutate({
+      userName: values.userName,
+      oldPassword: values.oldPassword,
+      newPassword: values.newPassword,
+    });
+  };
 
-			if (res.success) {
-				toast({
-					title: 'Password changed successfully!',
-				});
-			} else {
-				toast({
-					title: 'Failed to change password.',
-					variant: 'destructive',
-				});
-			}
-		},
-	});
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+      <div className="w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-8">Change Password</h2>
 
-	const onSubmit = async (data: z.infer<typeof changePasswordSchema>) => {
-		console.log(data);
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="userName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      readOnly
+                      placeholder="Your username"
+                      className="cursor-not-allowed focus-visible:ring-0"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-		mutate({
-			username: data.username,
-			accessCode: data.accessCode,
-			newPassword: data.newPassword,
-		});
-	};
+            <FormField
+              control={form.control}
+              name="oldPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Enter current password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-	return (
-		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
-			<h2 className='font-semibold text-2xl'>Change User&apos;s Password</h2>
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Enter new password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-			<div className='w-full text-center mb-4'>
-				<h3 className='text-lg'>Step {step} of 3</h3>
-				<p className='text-gray-600'>
-					{step === 1 && 'Enter your username and full name'}
-					{step === 2 && 'Enter your old password'}
-					{step === 3 && 'Enter and confirm your new password'}
-				</p>
-			</div>
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Confirm new password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-			<Form {...methods}>
-				<form
-					onSubmit={handleSubmit(onSubmit)}
-					className='w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6'
-				>
-					{step === 1 && (
-						<>
-							<FormField
-								control={control}
-								name='username'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Username</FormLabel>
-										<FormControl>
-											<Input {...field} placeholder='Enter your username' />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={control}
-								name='accessCode'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Access Code</FormLabel>
-										<FormControl>
-											<Input {...field} placeholder='Enter your access code' />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</>
-					)}
-
-					{step === 2 && (
-						<FormField
-							control={control}
-							name='oldPassword'
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Old Password</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											type='password'
-											placeholder='Enter your old password'
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					)}
-
-					{step === 3 && (
-						<>
-							<FormField
-								control={control}
-								name='newPassword'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>New Password</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												type='password'
-												placeholder='Enter your new password'
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={control}
-								name='confirmPassword'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Confirm Password</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												type='password'
-												placeholder='Confirm your new password'
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</>
-					)}
-
-					<div className='flex justify-between'>
-						{step > 1 && (
-							<Button type='button' onClick={previousStep} variant='outline'>
-								Back
-							</Button>
-						)}
-
-						{step < 3 && (
-							<Button type='button' className='ml-auto' onClick={nextStep}>
-								Next
-							</Button>
-						)}
-
-						{step === 3 && (
-							<Button type='submit' className='ml-auto'>
-								{isPending ? '...' : 'Change Password'}
-							</Button>
-						)}
-					</div>
-				</form>
-			</Form>
-		</main>
-	);
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Changing Password..." : "Change Password"}
+            </Button>
+          </form>
+        </Form>
+      </div>
+    </main>
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,28 +23,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
 import { appStore } from "@/store";
 import { formatCurrency } from "@/utils/formatNumber";
 import {
   ReturnAcctDetails2,
   getNeftBanks,
   returnNameEnquiry,
-  // balanceEnquiry,
   fundTransfer,
+  validateOtp,
 } from "@/services/apiAuth";
 import { generateTransactionId } from "@/utils/generateTransactionId";
 import { generatePaymentReference } from "@/utils/paymentReference";
-import TransactionModal from "@/components/TransactionModal"; // Import the modal
+import TransactionModal from "@/components/TransactionModal";
 
 export default function ThirdPartyTransfers() {
+  const { toast } = useToast();
   const { userData } = appStore();
+
   const [step, setStep] = useState(1);
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
-  // const [balance, setBalance] = useState<string | null>(null);
-  // const [balanceError, setBalanceError] = useState<string | null>(null);
   const [nameEnquiryResult, setNameEnquiryResult] = useState<any | null>(null);
   const [nameEnquiryError, setNameEnquiryError] = useState<string | null>(null);
-  // Modal state
+
+  // OTP Modal State
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [isValidatingOtp, setIsValidatingOtp] = useState(false);
+  const [isProcessingTransfer, setIsProcessingTransfer] = useState(false);
+
+  // Store pending transfer payload
+  const [pendingTransferPayload, setPendingTransferPayload] =
+    useState<any>(null);
+
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     type: "success" | "failed";
@@ -54,7 +67,7 @@ export default function ThirdPartyTransfers() {
     type: "success",
   });
 
-  // Fetch accounts for all accounts in userData.acctCollection
+  // Fetch accounts
   const {
     data: accountData,
     isLoading: isLoadingAccounts,
@@ -118,22 +131,18 @@ export default function ThirdPartyTransfers() {
     queryFn: getNeftBanks,
   });
 
-  // const { mutate: balanceEnquiryMutate, isPending: isBalanceEnquiryPending } = useMutation({
-  //   mutationFn: balanceEnquiry,
-  //   onSuccess: (res: any) => {
-  //     setBalance(res?.availableBalance || "Balance retrieved successfully");
-  //     setBalanceError(null);
-  //   },
-  //   onError: (error: any) => {
-  //     setBalanceError("Failed to fetch balance. Please try again.");
-  //   },
-  // });
-
-  const { mutate, isPending } = useMutation({
+  // Transfer mutation - called only after OTP success
+  const { mutate } = useMutation({
     mutationFn: fundTransfer,
     onSuccess: (data: any) => {
-      // Only treat as success if the bank returns responseCode '00'
       if (data?.responseCode === "00" || data?.responseCode === "0") {
+        toast({
+          title: "Transfer Successful!",
+          description: `₦${formatCurrency(
+            data.amount || data.transferAmount
+          )} sent successfully`,
+        });
+
         setModalState({
           isOpen: true,
           type: "success",
@@ -147,14 +156,17 @@ export default function ThirdPartyTransfers() {
             transactionId: data.transactionId || data.transactionReference,
           },
         });
-        setStep(1);
-        methods.reset();
-        setNameEnquiryResult(null);
-        setNameEnquiryError(null);
+
+        resetForm();
       } else {
-        // Business logic failure (e.g., "Insufficient funds", "Duplicate transaction", etc.)
         const errorMessage =
           data?.responseMessage || data?.message || "Transaction failed";
+        toast({
+          title: "Transfer Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+
         setModalState({
           isOpen: true,
           type: "failed",
@@ -163,15 +175,25 @@ export default function ThirdPartyTransfers() {
       }
     },
     onError: (error: any) => {
-      // Network error, timeout, 500, etc.
       const errorMessage = error?.message || "Network error. Please try again.";
+      toast({
+        title: "Transfer Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
       setModalState({
         isOpen: true,
         type: "failed",
         transactionData: { errorMessage },
       });
     },
+    onSettled: () => {
+      setIsProcessingTransfer(false);
+      setShowOtpModal(false);
+    },
   });
+
   const thirdPartyTransfersSchema = z.object({
     sourceAccount: z.string().min(1, "Please select your source account"),
     dailyTransferLimit: z.number().min(0, "Daily transfer limit required"),
@@ -201,15 +223,8 @@ export default function ThirdPartyTransfers() {
     mode: "onChange",
   });
 
-  const {
-    handleSubmit,
-    control,
-    trigger,
-    getValues,
-    setValue,
-    watch,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, control, trigger, getValues, setValue, watch } =
+    methods;
 
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
@@ -238,7 +253,7 @@ export default function ThirdPartyTransfers() {
       !!watch("bankCode") &&
       /^[0-9]+$/.test(watch("destinationAccountNumber")) &&
       watch("destinationAccountNumber").length >= 10,
-    onError: (error: any) => {
+    onError: () => {
       setNameEnquiryError("Invalid account number or bank. Please try again.");
     },
   });
@@ -250,25 +265,6 @@ export default function ThirdPartyTransfers() {
       setValue("destinationAccountName", nameEnquiryData.data?.accountName);
     }
   }, [nameEnquiryData, setValue]);
-
-  // useEffect(() => {
-  //   if (nameEnquiryResult?.success) {
-  //     balanceEnquiryMutate({
-  //       channelCode: nameEnquiryResult.data?.channelCode,
-  //       targetAccountName: nameEnquiryResult.data?.accountName,
-  //       targetAccountNumber: nameEnquiryResult.data?.accountNumber,
-  //       targetBankVerificationNumber:
-  //         nameEnquiryResult.data?.bankVerificationNumber,
-  //       authorizationCode: `MA-${watch(
-  //         "destinationAccountNumber"
-  //       )}-2022315-53097`,
-  //       destinationInstitutionCode:
-  //         nameEnquiryResult.data?.destinationInstitutionCode,
-  //       billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
-  //       transactionId: generateTransactionId(),
-  //     });
-  //   }
-  // }, [nameEnquiryResult, balanceEnquiryMutate, watch]);
 
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
@@ -324,14 +320,25 @@ export default function ThirdPartyTransfers() {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const onSubmit = async (data: z.infer<typeof thirdPartyTransfersSchema>) => {
+  const resetForm = () => {
+    setStep(1);
+    methods.reset();
+    setNameEnquiryResult(null);
+    setNameEnquiryError(null);
+    setPendingTransferPayload(null);
+    setOtp(["", "", "", "", "", ""]);
+  };
+
+  // Step 4: Confirm → Show OTP Modal
+  const handleConfirmTransfer = (
+    data: z.infer<typeof thirdPartyTransfersSchema>
+  ) => {
     if (!nameEnquiryResult?.success || !selectedAccount) {
       setModalState({
         isOpen: true,
         type: "failed",
         transactionData: {
-          errorMessage:
-            "Please complete steps 1 and 2 to select source account and verify beneficiary.",
+          errorMessage: "Please verify beneficiary account first.",
         },
       });
       return;
@@ -341,9 +348,7 @@ export default function ThirdPartyTransfers() {
       setModalState({
         isOpen: true,
         type: "failed",
-        transactionData: {
-          errorMessage: "Transfer amount exceeds daily transfer limit.",
-        },
+        transactionData: { errorMessage: "Amount exceeds daily limit" },
       });
       return;
     }
@@ -352,63 +357,109 @@ export default function ThirdPartyTransfers() {
       .replace(/\s+/g, " ")
       .trim();
 
-    // const newData = {
-    //   sourceInstitutionCode: "000525",
-    //   amount: data.transferAmount,
-    //   beneficiaryAccountName: nameEnquiryResult.data.accountName,
-    //   beneficiaryAccountNumber: nameEnquiryResult.data.accountNumber,
-    //   beneficiaryBankVerificationNumber:
-    //     nameEnquiryResult.data.bankVerificationNumber,
-    //   beneficiaryKYCLevel: nameEnquiryResult.data.kycLevel,
-    //   channelCode: nameEnquiryResult.data.channelCode,
-    //   originatorAccountName: cleanedAccountName,
-    //   originatorAccountNumber: selectedAccount.accountNumber,
-    //   originatorBankVerificationNumber: "33333333333",
-    //   originatorKYCLevel: "1",
-    //   destinationInstitutionCode:
-    //     nameEnquiryResult.data.destinationInstitutionCode,
-    //   mandateReferenceNumber: `MA-${nameEnquiryResult.data.accountNumber}-2022315-53097`,
-    //   nameEnquiryRef: nameEnquiryResult.data.sessionID,
-    //   originatorNarration:
-    //     data.narration || `Transfer to ${nameEnquiryResult.data.accountName}`,
-    //   paymentReference: generatePaymentReference(),
-    //   transactionId: generateTransactionId(),
-    //   transactionLocation: "1.38716,3.05117",
-    //   beneficiaryNarration:
-    //     data.narration || `Transfer to ${nameEnquiryResult.data.accountName}`,
-    //   billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
-    //   initiatorAccountName: cleanedAccountName,
-    //   initiatorAccountNumber: selectedAccount.accountNumber,
-    // };
-
-    const newData = {
+    const payload = {
       sourceInstitutionCode: "999998",
-      amount: 100,
-      beneficiaryAccountName: "Ake Mobolaji & Temabo",
-      beneficiaryAccountNumber: "1780004070",
+      amount: data.transferAmount,
+      beneficiaryAccountName: nameEnquiryResult.data?.accountName || "",
+      beneficiaryAccountNumber:
+        nameEnquiryResult.data?.accountNumber || data.destinationAccountNumber,
       beneficiaryBankVerificationNumber: "22222222226",
       beneficiaryKYCLevel: 1,
       channelCode: 1,
-      originatorAccountName: "vee Test",
-      originatorAccountNumber: "0112345678",
-      originatorBankVerificationNumber: 33333333333,
+      originatorAccountName: cleanedAccountName,
+      originatorAccountNumber: selectedAccount.accountNumber,
+      originatorBankVerificationNumber: "33333333333",
       originatorKYCLevel: 1,
-      destinationInstitutionCode: 999998,
-      mandateReferenceNumber: `MA-0112345678-2022315-53097`,
-      nameEnquiryRef: "999999191106195503191106195503",
-      originatorNarration: "Payment from 0112345678 to 1780004070 Test123 ",
-      paymentReference: "NIPMINI/828281672",
-      transactionId:  generateTransactionId(),
+      destinationInstitutionCode: watch("bankCode"),
+      mandateReferenceNumber: `MA-${data.destinationAccountNumber}-20260102-12345`,
+      nameEnquiryRef:
+        nameEnquiryResult.data?.sessionID || "999999191106195503191106195503",
+      originatorNarration:
+        data.narration || `Transfer to ${nameEnquiryResult.data?.accountName}`,
+      paymentReference: generatePaymentReference(),
+      transactionId: generateTransactionId(),
       transactionLocation: "1.38716,3.05117",
       beneficiaryNarration:
-        "Payment from 0112345678 to 1780004070 Test123 ",
+        data.narration || `Transfer from ${cleanedAccountName}`,
       billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
-      initiatorAccountName: "Helen Test",
-      initiatorAccountNumber: "0912345678",
+      initiatorAccountName: cleanedAccountName,
+      initiatorAccountNumber: selectedAccount.accountNumber,
     };
 
-    console.log("Submitting transfer:", newData);
-    mutate(newData);
+    setPendingTransferPayload(payload);
+    setShowOtpModal(true);
+    setOtp(["", "", "", "", "", ""]);
+  };
+
+  // OTP Handlers
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d?$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    if (value && index < 5) otpRefs.current[index + 1]?.focus();
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").slice(0, 6);
+    if (/^\d{6}$/.test(pasted)) {
+      setOtp(pasted.split(""));
+      otpRefs.current[5]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Validate OTP then transfer
+  const handleValidateAndTransfer = async () => {
+    const token = otp.join("");
+    if (token.length !== 6) {
+      toast({
+        title: "Invalid Token",
+        description: "Please enter all 6 digits",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidatingOtp(true);
+
+    try {
+      const response = await validateOtp({
+        token,
+        userName: userData?.userRec?.puserName || "",
+      });
+
+      if (response.success || response.ResponseCode === "90000") {
+        toast({
+          title: "Token Validated",
+          description: "Processing your transfer...",
+        });
+
+        setIsProcessingTransfer(true);
+        mutate(pendingTransferPayload);
+      } else {
+        toast({
+          title: "Invalid Token",
+          description:
+            response.message || response.retMsg || "Token is incorrect",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Validation Failed",
+        description: "Unable to validate token. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingOtp(false);
+    }
   };
 
   const banks = neftBanks?.data;
@@ -442,7 +493,7 @@ export default function ThirdPartyTransfers() {
 
       <Form {...methods}>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(handleConfirmTransfer)}
           className="w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6"
         >
           {step === 1 && (
@@ -633,7 +684,7 @@ export default function ThirdPartyTransfers() {
                 type="button"
                 className="ml-auto"
                 onClick={nextStep}
-                disabled={isPending || isLoadingNameEnquiry}
+                disabled={isLoadingNameEnquiry}
               >
                 {isLoadingNameEnquiry ? "Loading..." : "Next"}
               </Button>
@@ -644,8 +695,8 @@ export default function ThirdPartyTransfers() {
                 <Button type="button" onClick={previousStep} variant="outline">
                   Cancel
                 </Button>
-                <Button type="submit" className="ml-auto" disabled={isPending}>
-                  {isPending ? "Processing..." : "Confirm Transfer"}
+                <Button type="submit" className="ml-auto">
+                  Confirm Transfer
                 </Button>
               </>
             )}
@@ -653,7 +704,66 @@ export default function ThirdPartyTransfers() {
         </form>
       </Form>
 
-      {/* Transaction Modal */}
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card p-8 rounded-xl shadow-2xl max-w-md w-full">
+            <h3 className="text-2xl font-bold text-center mb-4">
+              Token Required
+            </h3>
+            <p className="text-center text-muted-foreground mb-8">
+              Enter the 6-digit token from your bank's token app
+            </p>
+
+            <div className="flex gap-3 justify-center mb-10">
+              {otp.map((digit, i) => (
+                <Input
+                  key={i}
+                  ref={(el) => (otpRefs.current[i] = el)}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  onPaste={i === 0 ? handleOtpPaste : undefined}
+                  maxLength={1}
+                  className="w-14 h-14 text-2xl font-bold text-center"
+                  type="text"
+                  inputMode="numeric"
+                  disabled={isValidatingOtp || isProcessingTransfer}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setOtp(["", "", "", "", "", ""]);
+                  setPendingTransferPayload(null);
+                }}
+                disabled={isValidatingOtp || isProcessingTransfer}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleValidateAndTransfer}
+                disabled={
+                  otp.join("").length !== 6 ||
+                  isValidatingOtp ||
+                  isProcessingTransfer
+                }
+              >
+                {isValidatingOtp
+                  ? "Validating..."
+                  : isProcessingTransfer
+                  ? "Processing..."
+                  : "Validate & Transfer"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <TransactionModal
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ ...modalState, isOpen: false })}

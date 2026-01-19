@@ -32,7 +32,7 @@ export const SidebarMobile = () => {
 
 			<SheetContent side='left' className='flex flex-col'>
 				<div className='flex items-center'>
-					<h2 className='text-bold text-xl'>Flow Bank</h2>
+					<h2 className='text-bold text-xl'>Nomase MFB</h2>
 				</div>
 
 				{renderRoutes({

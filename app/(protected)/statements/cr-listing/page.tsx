@@ -63,18 +63,59 @@ export default function CRListing() {
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState<string>("");
 
-  const { data, isLoading } = useQuery({
+  const { data: accountData, isLoading } = useQuery({
     queryKey: ["my-accounts"],
-    queryFn: () =>
-      ReturnAcctDetails2(
-        2,
-        userData?.userRec,
-        userData?.acctCollection?.AcctStruct
-      ),
-    enabled: !!userData?.acctCollection?.AcctStruct,
+    queryFn: async () => {
+      if (!userData?.userRec || !userData?.acctCollection?.length) {
+        return { success: false, data: [] };
+      }
+
+      const userRec = {
+        accCode: userData.userRec.accCode || "",
+        puserName: userData.userRec.puserName || "",
+      };
+
+      const accountPromises = userData.acctCollection.map(
+        async (account: any) => {
+          const payload = [
+            {
+              customerId: account.customerID,
+              accountNumber: account.accountNumber,
+            },
+          ];
+          const response = await ReturnAcctDetails2(userRec, payload);
+          return response;
+        }
+      );
+
+      const responses = await Promise.all(accountPromises);
+
+      const accounts = responses.flatMap((response, index) => {
+        if (response.success && response.data) {
+          return response.data.map((account: any) => ({
+            accountNumber: account.accountNumber,
+            accountName: account.description,
+            availBal: account.availBal,
+            namCurrency: account.currency,
+            codAcctType: account.type === "Current" ? "CK" : "SV",
+            CustomerID: userData.acctCollection[index].CustomerID,
+          }));
+        }
+        console.error(
+          `Failed to fetch details for account ${userData.acctCollection[index].accountNumber}:`,
+          response.errorMessage
+        );
+        return [userData.acctCollection[index]];
+      });
+
+      return { success: true, data: accounts };
+    },
+    enabled: !!userData?.userRec && !!userData?.acctCollection?.length,
   });
 
-  const accounts = userData?.acctCollection || [];
+  const accounts = accountData?.success
+    ? accountData.data
+    : userData?.acctCollection || [];
 
   const crListingSchema = z.object({
     accountNumber: z.string().min(1, "Please enter your account"),
@@ -198,7 +239,7 @@ export default function CRListing() {
                         {accounts?.map((account: any, index: number) => (
                           <SelectItem key={index} value={account.accountNumber}>
                             {account.accountNumber} -{" "}
-                            {formatCurrency(Number(account.availBalance) || 0)}
+                            {formatCurrency(Number(account.availBal) || 0)}
                           </SelectItem>
                         ))}
                       </SelectContent>

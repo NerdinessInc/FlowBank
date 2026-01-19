@@ -23,7 +23,7 @@ export const Sidebar = () => {
 	return (
 		<nav className='grid items-start px-4 text-sm font-medium gap-1'>
 			<div className='h-14 flex items-center'>
-				<h2 className='text-xl font-bold'>Flow Bank</h2>
+				<h2 className='text-xl font-bold'>Nomase MFB</h2>
 			</div>
 
 			{renderRoutes({

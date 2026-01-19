@@ -142,7 +142,7 @@ export default function Dashboard() {
   return (
     <main className="h-full w-full flex flex-col gap-6">
       <h2 className="text-2xl font-bold">
-        Welcome, {userData?.userRec?.pfullName}
+        Welcome, {userData?.acctCollection[0].accountName}
       </h2>
 
       <div className="grid gap-2 md:grid-cols-3">

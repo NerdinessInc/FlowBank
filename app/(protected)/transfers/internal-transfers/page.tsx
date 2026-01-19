@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,23 +23,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
 import { appStore } from "@/store";
 import { formatCurrency } from "@/utils/formatNumber";
 import {
   ReturnAcctDetails2,
   returnNameEnquiryNomase,
   internalTransfer,
-} from "@/services/apiAuth"; // Assuming these are available in apiAuth
+  validateOtp,
+} from "@/services/apiAuth";
 import { generateTransactionId } from "@/utils/generateTransactionId";
 import { generatePaymentReference } from "@/utils/paymentReference";
-import TransactionModal from "@/components/TransactionModal"; // Reusing the modal
+import TransactionModal from "@/components/TransactionModal";
 
 export default function InterBankLocalTransfers() {
+  const { toast } = useToast();
   const { userData } = appStore();
+
   const [step, setStep] = useState(1);
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
   const [nameEnquiryResult, setNameEnquiryResult] = useState<any | null>(null);
   const [nameEnquiryError, setNameEnquiryError] = useState<string | null>(null);
+
+  // OTP Modal State
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [isValidatingOtp, setIsValidatingOtp] = useState(false);
+  const [isProcessingTransfer, setIsProcessingTransfer] = useState(false);
+
+  // Store pending transfer payload
+  const [pendingTransferData, setPendingTransferData] = useState<any>(null);
+
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     type: "success" | "failed";
@@ -108,45 +124,38 @@ export default function InterBankLocalTransfers() {
     ? accountData.data
     : userData?.acctCollection || [];
 
-  // Internal transfer mutation
-  const { mutate, isPending } = useMutation({
+  // Transfer mutation (now called only after OTP)
+  const { mutate } = useMutation({
     mutationFn: async (payload) => {
       const response = await internalTransfer(payload);
-      
-      // If retVal is NOT "00", treat it as a business error
       if (response?.retVal !== "00") {
         const error = new Error(
           response?.retMsg || response?.message || "Transfer failed"
         );
-        (error as any).responseData = response; // optional: keep full response for debugging
+        (error as any).responseData = response;
         throw error;
       }
-      
-     return { response, payload }; // Only successful transactions reach here
+      return { response, payload };
     },
     onSuccess: ({ response, payload }) => {
-      // This now ONLY runs when retVal === "00"
+      toast({
+        title: "Transfer Successful!",
+        description: `₦${formatCurrency(payload.amount)} sent to ${
+          payload.beneficiaryAccountName
+        }`,
+      });
       setModalState({
         isOpen: true,
         type: "success",
         transactionData: {
-          amount: response.amount || payload?.amount,
-          beneficiaryAccountName:
-            response.beneficiaryAccountName || payload?.beneficiaryAccountName,
-          beneficiaryAccountNumber:
-            response.beneficiaryAccountNumber ||
-            payload?.beneficiaryAccountNumber,
-          paymentReference:
-            response.paymentReference || payload?.paymentReference,
-          transactionId: response.transactionId || payload?.transactionId,
+          amount: payload.amount,
+          beneficiaryAccountName: payload.beneficiaryAccountName,
+          beneficiaryAccountNumber: payload.beneficiaryAccountNumber,
+          paymentReference: payload.paymentReference,
+          transactionId: payload.transactionId,
         },
       });
-
-      // Reset form state
-      setStep(1);
-      methods.reset();
-      setNameEnquiryResult(null);
-      setNameEnquiryError(null);
+      resetForm();
     },
     onError: (error: any) => {
       const errorMessage =
@@ -154,7 +163,11 @@ export default function InterBankLocalTransfers() {
         error?.responseData?.message ||
         error?.message ||
         "Transfer failed. Please try again.";
-
+      toast({
+        title: "Transfer Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
       setModalState({
         isOpen: true,
         type: "failed",
@@ -163,7 +176,6 @@ export default function InterBankLocalTransfers() {
     },
   });
 
-  // Zod schema aligned with internalTransfer payload
   const internalTransfersSchema = z.object({
     sourceAccount: z.string().min(1, "Please select your source account"),
     dailyTransferLimit: z.number().min(0, "Daily transfer limit required"),
@@ -223,21 +235,16 @@ export default function InterBankLocalTransfers() {
       !!watch("destinationAccount") &&
       /^[0-9]+$/.test(watch("destinationAccount")) &&
       watch("destinationAccount").length >= 10,
-    onError: (error: any) => {
+    onError: () => {
       setNameEnquiryError("Invalid account number. Please try again.");
     },
   });
 
-  // Update name enquiry result
   useEffect(() => {
     if (nameEnquiryData?.success) {
       setNameEnquiryResult(nameEnquiryData);
       setNameEnquiryError(null);
       setValue(
-        "destinationAccountName",
-        nameEnquiryData.data?.data?.cod_acct_title
-      );
-      console.log(
         "destinationAccountName",
         nameEnquiryData.data?.data?.cod_acct_title
       );
@@ -264,7 +271,6 @@ export default function InterBankLocalTransfers() {
     }
   }, [watch("sourceAccount"), accounts]);
 
-  // Next step validation
   const nextStep = async () => {
     const fields = {
       1: ["sourceAccount", "dailyTransferLimit", "destinationAccount"],
@@ -275,7 +281,6 @@ export default function InterBankLocalTransfers() {
     const isValid = await trigger(fields as any);
     if (!isValid) return;
 
-    // Manual validation for transfer amount vs daily limit (step 2)
     if (step === 2) {
       const amount = getValues("transferAmount") as number;
       const limit = getValues("dailyTransferLimit") as number;
@@ -301,14 +306,24 @@ export default function InterBankLocalTransfers() {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const onSubmit = async (data: z.infer<typeof internalTransfersSchema>) => {
+  const resetForm = () => {
+    setStep(1);
+    methods.reset();
+    setNameEnquiryResult(null);
+    setNameEnquiryError(null);
+    setPendingTransferData(null);
+  };
+
+  // Step 3: Confirm → Show OTP Modal
+  const handleConfirmTransfer = async (
+    data: z.infer<typeof internalTransfersSchema>
+  ) => {
     if (!nameEnquiryResult?.success || !selectedAccount) {
       setModalState({
         isOpen: true,
         type: "failed",
         transactionData: {
-          errorMessage:
-            "Please complete step 1 to select source account and verify destination account.",
+          errorMessage: "Please verify destination account first.",
         },
       });
       return;
@@ -318,9 +333,7 @@ export default function InterBankLocalTransfers() {
       setModalState({
         isOpen: true,
         type: "failed",
-        transactionData: {
-          errorMessage: "Transfer amount exceeds daily transfer limit.",
-        },
+        transactionData: { errorMessage: "Amount exceeds daily limit" },
       });
       return;
     }
@@ -329,9 +342,7 @@ export default function InterBankLocalTransfers() {
       setModalState({
         isOpen: true,
         type: "failed",
-        transactionData: {
-          errorMessage: "Source and destination accounts cannot be the same.",
-        },
+        transactionData: { errorMessage: "Cannot transfer to same account" },
       });
       return;
     }
@@ -340,7 +351,7 @@ export default function InterBankLocalTransfers() {
       .replace(/\s+/g, " ")
       .trim();
 
-    const newData = {
+    const payload = {
       sourceInstitutionCode: "000525",
       amount: data.transferAmount,
       beneficiaryAccountName: nameEnquiryResult.data?.data.cod_acct_title,
@@ -352,8 +363,8 @@ export default function InterBankLocalTransfers() {
       originatorAccountNumber: selectedAccount.accountNumber,
       originatorBankVerificationNumber: "33333333333",
       originatorKYCLevel: 1,
-      destinationInstitutionCode: "000525", // Same bank
-      mandateReferenceNumber: `MA-${nameEnquiryResult.data?.data.cod_acct_no}-20251110-53097`,
+      destinationInstitutionCode: "000525",
+      mandateReferenceNumber: `MA-${nameEnquiryResult.data?.data.cod_acct_no}-20260102-12345`,
       nameEnquiryRef: "999999191106195503191106195503",
       originatorNarration:
         data.narration ||
@@ -369,9 +380,89 @@ export default function InterBankLocalTransfers() {
       initiatorAccountNumber: selectedAccount.accountNumber,
     };
 
-    console.log("Submitting internal transfer:", newData);
-    mutate(newData);
+    setPendingTransferData(payload);
+    // console.log("Prepared transfer payload:", payload);
+    setShowOtpModal(true);
+    setOtp(["", "", "", "", "", ""]);
   };
+
+  // OTP Handlers
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d?$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    if (value && index < 5) otpRefs.current[index + 1]?.focus();
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").slice(0, 6);
+    if (/^\d{6}$/.test(pasted)) {
+      setOtp(pasted.split(""));
+      otpRefs.current[5]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Validate OTP then send transfer
+ const handleValidateAndTransfer = async () => {
+   const token = otp.join("");
+   if (token.length !== 6) {
+     toast({
+       title: "Invalid Token",
+       description: "Please enter all 6 digits",
+       variant: "destructive",
+     });
+     return;
+   }
+
+ 
+   setIsValidatingOtp(true);
+
+   try {
+     const response = await validateOtp({
+       token,
+       userName: userData?.userRec?.puserName || "",
+     });
+
+     if (response.success || response.ResponseCode === "90000") {
+       // ADD THIS TOAST — this was missing!
+       toast({
+         title: "Token Validated",
+         description: "Processing your transfer...",
+       });
+
+       // Now proceed to transfer
+       toast({
+  title: "OTP Verified",
+  description: "Completing your transfer...",
+});
+       setIsProcessingTransfer(true);
+       mutate(pendingTransferData);
+     } else {
+       toast({
+         title: "Invalid Token",
+         description:
+           response.message || response.retMsg || "Token is incorrect",
+         variant: "destructive",
+       });
+     }
+   } catch (err) {
+     toast({
+       title: "Validation Failed",
+       description: "Unable to validate token. Please try again.",
+       variant: "destructive",
+     });
+   } finally {
+     setIsValidatingOtp(false);
+   }
+ };
 
   if (isLoadingAccounts) return <Loading />;
   if (accountsError)
@@ -400,7 +491,7 @@ export default function InterBankLocalTransfers() {
 
       <Form {...methods}>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(handleConfirmTransfer)}
           className="w-[90%] md:w-2/3 grid grid-cols-1 gap-4 border border-border rounded-md p-6"
         >
           {step === 1 && (
@@ -556,7 +647,7 @@ export default function InterBankLocalTransfers() {
                 type="button"
                 className="ml-auto"
                 onClick={nextStep}
-                disabled={isPending || isLoadingNameEnquiry}
+                disabled={isLoadingNameEnquiry}
               >
                 {isLoadingNameEnquiry ? "Loading..." : "Next"}
               </Button>
@@ -567,14 +658,74 @@ export default function InterBankLocalTransfers() {
                 <Button type="button" onClick={previousStep} variant="outline">
                   Cancel
                 </Button>
-                <Button type="submit" className="ml-auto" disabled={isPending}>
-                  {isPending ? "Processing..." : "Confirm Transfer"}
+                <Button type="submit" className="ml-auto">
+                  Confirm Transfer
                 </Button>
               </>
             )}
           </div>
         </form>
       </Form>
+
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card p-8 rounded-xl shadow-2xl max-w-md w-full">
+            <h3 className="text-2xl font-bold text-center mb-4">
+              Token Required
+            </h3>
+            <p className="text-center text-muted-foreground mb-8">
+              Enter the 6-digit token from your bank's token app
+            </p>
+
+            <div className="flex gap-3 justify-center mb-10">
+              {otp.map((digit, i) => (
+                <Input
+                  key={i}
+                  ref={(el) => (otpRefs.current[i] = el)}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  onPaste={i === 0 ? handleOtpPaste : undefined}
+                  maxLength={1}
+                  className="w-14 h-14 text-2xl font-bold text-center"
+                  type="text"
+                  inputMode="numeric"
+                  disabled={isValidatingOtp || isProcessingTransfer}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setOtp(["", "", "", "", "", ""]);
+                  setPendingTransferData(null);
+                }}
+                disabled={isValidatingOtp || isProcessingTransfer}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleValidateAndTransfer}
+                disabled={
+                  otp.join("").length !== 6 ||
+                  isValidatingOtp ||
+                  isProcessingTransfer
+                }
+              >
+                {isValidatingOtp
+                  ? "Validating..."
+                  : isProcessingTransfer
+                  ? "Processing..."
+                  : "Validate & Transfer"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <TransactionModal
         isOpen={modalState.isOpen}

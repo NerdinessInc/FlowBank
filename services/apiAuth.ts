@@ -101,6 +101,27 @@ export const ReturnAcctDetails2 = async (
 };
 
 // ────────────────────────────────────────────────────────────
+// CHANGE PASSWORD
+export const changePassword = async (values: {
+  userName: string;
+  oldPassword: string;
+  newPassword: string;
+}) => {
+  try {
+    const requestBody = {
+      userName: values.userName,
+      oldPassword: values.oldPassword,
+      newPassword: values.newPassword,
+    };
+
+    const response = await api.post("/user/ChangePassword", requestBody);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ────────────────────────────────────────────────────────────
 // GET ACCOUNT STATEMENT
 export const getAccountHistory = async (
   accountNumber: string,
@@ -326,7 +347,7 @@ export const returnNameEnquiry = async (values: {
   transactionId: string;
 }) => {
   try {
-    const response = await api.post("/nibss/nameEnquiry", values);
+    const response = await api.post("/nibss/name-enquiry", values);
     const result = response.data;
     return {
       success: true,
@@ -389,7 +410,7 @@ export const fundTransfer = async (values: {
   try {
     console.log("Sending fundTransfer with:", values);
 
-    const response = await api.post("/nibss/fundsTransfer", values);
+    const response = await api.post("/nibss/funds-transfer", values);
     console.log("fundTransfer response:", response);
     return response.data;
   } catch (error: any) {
@@ -410,7 +431,7 @@ export const returnNameEnquiryNomase = async (values: {
 }) => {
   try {
     const response = await api.post(
-      `/nibss/getNameInquiry/${values.accountNumber}`
+      `/nibss/name-inquiry/${values.accountNumber}`
     );
     const result = response.data;
     return {
@@ -455,13 +476,110 @@ export const internalTransfer = async (values: {
   try {
     console.log("Sending internalTransfer with:", values);
 
-    const response = await api.post("/nibss/thirdPartyTransfer", values);
+    const response = await api.post("/nibss/third-party-transfer", values);
     console.log("internalTransfer response:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("internalTransfer error status:", error.response?.status);
     console.error("internalTransfer error data:", error.response?.data);
     console.error("internalTransfer error message:", error.message);
+    throw error;
+  }
+};
+
+// VALIDATE OTP
+export const validateOtp = async (values: {
+  token: string;
+  userName: string;
+}) => {
+  try {
+    console.log("Validating OTP with:", values);
+    const response = await api.post("/user/ValidateOTP", values);
+    console.log("validateOtp response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.log("validateOtp error status:", error.response);
+    console.log("validateOtp error data:", error.response?.data);
+    console.log("validateOtp error message:", error.message);
+    throw error;
+  }
+};
+
+// TRANSFER HISTORY
+export const getTransferHistory = async (accountNumber: number) => {
+  try {
+    const response = await api.post(`/nibss/transfer/history/${accountNumber}`);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ============================================
+// INTERSWITCH QUICKTELLER - AIRTIME & DATA
+// ============================================
+
+// Get all mobile recharge billers (Category ID = 4)
+export const getMobileRechargeBillers = async (): Promise<any> => {
+  try {
+    const response = await api.get("/interswitch/getBillersByCategory/4");
+    return response.data;
+  } catch (error: any) {
+    console.log(
+      "Failed to fetch billers:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Get payment items (data bundles) for a specific biller
+export const getBillerPaymentItems = async (billerId: string): Promise<any> => {
+  try {
+    const response = await api.get(
+      `/interswitch/getBillerPaymentItems/${billerId}`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.log(
+      "Failed to fetch payment items:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+//BUY AIRTIME / DATA
+export const BuyAirtimeData = async (values: {
+  paymentCode: string;
+  customerId: string;
+  customerMobile: string;
+  customerEmail: string;
+  amount: number;
+  requestReference: string;
+}) => {
+  try {
+    console.log("Sending BuyAirtimeData with:", values);
+
+    const response = await api.post("/interswitch/billPaymentAdvice", values);
+    console.log("BuyAirtimeData response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.log("BuyAirtimeData error status:", error.response?.status);
+    console.log("BuyAirtimeData error data:", error.response?.data);
+    console.log("BuyAirtimeData error message:", error.response);
+    throw error;
+  }
+};
+
+//GET SERVICES
+export const getServices = async () => {
+  try {
+    const response = await api.get("/nibss/services");
+    console.log("Get Services response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("Get Services error:", error);
     throw error;
   }
 };
