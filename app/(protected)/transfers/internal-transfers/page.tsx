@@ -144,6 +144,10 @@ export default function InterBankLocalTransfers() {
           payload.beneficiaryAccountName
         }`,
       });
+      
+      setIsProcessingTransfer(false);
+      setShowOtpModal(false);
+
       setModalState({
         isOpen: true,
         type: "success",
@@ -431,7 +435,7 @@ export default function InterBankLocalTransfers() {
        userName: userData?.userRec?.puserName || "",
      });
 
-     if (response.success || response.ResponseCode === "90000") {
+    if (response.success || response.retVal === 0 || response.retMsg === "Code verified successfully") {
        // ADD THIS TOAST — this was missing!
        toast({
          title: "Token Validated",

@@ -94,7 +94,7 @@ export default function ThirdPartyTransfers() {
           ];
           const response = await ReturnAcctDetails2(userRec, payload);
           return response;
-        }
+        },
       );
 
       const responses = await Promise.all(accountPromises);
@@ -112,7 +112,7 @@ export default function ThirdPartyTransfers() {
         }
         console.error(
           `Failed to fetch details for account ${userData.acctCollection[index].accountNumber}:`,
-          response.errorMessage
+          response.errorMessage,
         );
         return [userData.acctCollection[index]];
       });
@@ -139,9 +139,12 @@ export default function ThirdPartyTransfers() {
         toast({
           title: "Transfer Successful!",
           description: `₦${formatCurrency(
-            data.amount || data.transferAmount
+            data.amount || data.transferAmount,
           )} sent successfully`,
         });
+
+       setIsProcessingTransfer(false);
+       setShowOtpModal(false);
 
         setModalState({
           isOpen: true,
@@ -230,7 +233,7 @@ export default function ThirdPartyTransfers() {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
       const limit = userData?.pLimitsObject?.find(
-        (limit: any) => limit.accountnumber === sourceAccount
+        (limit: any) => limit.accountnumber === sourceAccount,
       )?.interBankLimit;
       setValue("dailyTransferLimit", Number(limit) || 0);
     }
@@ -270,7 +273,7 @@ export default function ThirdPartyTransfers() {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
       const selected = accounts?.find(
-        (account: any) => account.accountNumber?.toString() === sourceAccount
+        (account: any) => account.accountNumber?.toString() === sourceAccount,
       );
       if (selected) {
         setSelectedAccount({
@@ -311,7 +314,7 @@ export default function ThirdPartyTransfers() {
       setStep((prev) => Math.min(prev + 1, 4));
     } else if (step === 2 && !nameEnquiryResult?.success) {
       setNameEnquiryError(
-        "Please wait for account verification or correct the details."
+        "Please wait for account verification or correct the details.",
       );
     }
   };
@@ -331,7 +334,7 @@ export default function ThirdPartyTransfers() {
 
   // Step 4: Confirm → Show OTP Modal
   const handleConfirmTransfer = (
-    data: z.infer<typeof thirdPartyTransfersSchema>
+    data: z.infer<typeof thirdPartyTransfersSchema>,
   ) => {
     if (!nameEnquiryResult?.success || !selectedAccount) {
       setModalState({
@@ -435,7 +438,11 @@ export default function ThirdPartyTransfers() {
         userName: userData?.userRec?.puserName || "",
       });
 
-      if (response.success || response.ResponseCode === "90000") {
+      if (
+        response.success ||
+        response.retVal === 0 ||
+        response.retMsg === "Code verified successfully"
+      ) {
         toast({
           title: "Token Validated",
           description: "Processing your transfer...",
@@ -756,8 +763,8 @@ export default function ThirdPartyTransfers() {
                 {isValidatingOtp
                   ? "Validating..."
                   : isProcessingTransfer
-                  ? "Processing..."
-                  : "Validate & Transfer"}
+                    ? "Processing..."
+                    : "Validate & Transfer"}
               </Button>
             </div>
           </div>

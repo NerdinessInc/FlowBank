@@ -16,6 +16,7 @@ import {
 	Pause,
 	Nfc,
 	ArrowDownUp,
+	History,
 } from 'lucide-react';
 
 export interface Route {
@@ -106,9 +107,9 @@ export const sidebarRoutes: Route[] = [
 				icon: <ArrowLeftRight className='h-4 w-4' />,
 			},
 			{
-				label: 'Beneficiaries',
-				pathname: '/transfers/beneficiaries',
-				icon: <ArrowLeftRight className='h-4 w-4' />,
+				label: 'History',
+				pathname: '/transfers/history',
+				icon: <History className='h-4 w-4' />,
 			},
 		],
 	},

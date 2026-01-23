@@ -259,7 +259,7 @@ export default function DataPayment() {
 
     try {
       const otpResponse = await validateOtp({ token, userName });
-      if (otpResponse.success || otpResponse.ResponseCode === "90000") {
+      if (otpResponse.success || otpResponse.retVal === 0 || otpResponse.retMsg === "Code verified successfully") {
         await processDataPurchase();
       } else {
         toast({

@@ -79,7 +79,8 @@ export default function ChangePasswordForm() {
 
       // Axios wraps the response body in { data: ... }
       // Your backend returns plain "true" on success
-      const success = response === true || response?.data === true;
+      const success =
+        response === true || response?.retMsg === "Password Changed Successfully";
 
       if (success) {
         toast({

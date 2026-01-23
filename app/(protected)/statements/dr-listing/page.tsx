@@ -291,7 +291,7 @@ export default function DRListing() {
           <Card>
             <CardHeader>
               <CardTitle>Statement Details</CardTitle>
-              <PDFDownloadLink
+              {/* <PDFDownloadLink
                 document={<StatementPDF accountHistory={accountHistory} />}
                 fileName={`Statement ${accountHistory[0].COD_ACCT_NO}.pdf`}
                 className="w-36"
@@ -300,7 +300,7 @@ export default function DRListing() {
                   Download
                   <Save className="h-4 w-4" />
                 </Button>
-              </PDFDownloadLink>
+              </PDFDownloadLink> */}
             </CardHeader>
             <CardContent>
               <Separator className="my-4" />

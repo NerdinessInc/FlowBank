@@ -110,8 +110,8 @@ export const changePassword = async (values: {
   try {
     const requestBody = {
       userName: values.userName,
-      oldPassword: values.oldPassword,
-      newPassword: values.newPassword,
+      oldPassword: webClasses.encryptText(values.oldPassword),
+      newPassword: webClasses.encryptText(values.newPassword),
     };
 
     const response = await api.post("/user/ChangePassword", requestBody);
@@ -508,8 +508,8 @@ export const validateOtp = async (values: {
 // TRANSFER HISTORY
 export const getTransferHistory = async (accountNumber: number) => {
   try {
-    const response = await api.post(`/nibss/transfer/history/${accountNumber}`);
-    return response;
+   const response = await api.post(`/nibss/transfer/history/${accountNumber}`);
+    return response.data;
   } catch (error) {
     throw error;
   }
