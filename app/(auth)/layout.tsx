@@ -27,9 +27,6 @@ export default function AuthLayout({
     return () => clearInterval(timer);
   }, []);
 
-  //TODO: RESPONSIVENESS!!!!!!!!!!!!!!!
-  //TODO: AIRTIME & DATA PURCHASE PAGE
-
   return (
      <main
       className="flex flex-col h-full sm:h-screen justify-center p-[32px] sm:px-[52px] sm:py-[32px]"

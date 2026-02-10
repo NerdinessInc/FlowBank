@@ -143,8 +143,8 @@ export default function ThirdPartyTransfers() {
           )} sent successfully`,
         });
 
-       setIsProcessingTransfer(false);
-       setShowOtpModal(false);
+        setIsProcessingTransfer(false);
+        setShowOtpModal(false);
 
         setModalState({
           isOpen: true,
@@ -361,22 +361,30 @@ export default function ThirdPartyTransfers() {
       .trim();
 
     const payload = {
-      sourceInstitutionCode: "999998",
+      sourceInstitutionCode: "000017",
+      clientId: "090736",
+      // sessionID: null,
       amount: data.transferAmount,
-      beneficiaryAccountName: nameEnquiryResult.data?.accountName || "",
+      beneficiaryAccountName: nameEnquiryResult.data?.accountName,
       beneficiaryAccountNumber:
         nameEnquiryResult.data?.accountNumber || data.destinationAccountNumber,
-      beneficiaryBankVerificationNumber: "22222222226",
+      beneficiaryBankVerificationNumber:
+        nameEnquiryResult.data?.bankVerificationNumber,
       beneficiaryKYCLevel: 1,
       channelCode: 1,
-      originatorAccountName: cleanedAccountName,
-      originatorAccountNumber: selectedAccount.accountNumber,
-      originatorBankVerificationNumber: "33333333333",
+      // ------------------------------------------------------------------
+      originatorAccountName: "NOMASE MICROFINANCE BANK LIMITED",
+      originatorAccountNumber: "0124003581",
+      originatorBankVerificationNumber: "",
+      // originatorBankVerificationNumber: "22000000083",
+      // originatorAccountName: cleanedAccountName,
+      // originatorAccountNumber: selectedAccount.accountNumber,
+      // originatorBankVerificationNumber: "33333333333",
+      // ------------------------------------------------------------------
       originatorKYCLevel: 1,
       destinationInstitutionCode: watch("bankCode"),
-      mandateReferenceNumber: `MA-${data.destinationAccountNumber}-20260102-12345`,
-      nameEnquiryRef:
-        nameEnquiryResult.data?.sessionID || "999999191106195503191106195503",
+      mandateReferenceNumber: "RC0220310/1349/0015468292",
+      nameEnquiryRef: nameEnquiryResult.data?.sessionID,
       originatorNarration:
         data.narration || `Transfer to ${nameEnquiryResult.data?.accountName}`,
       paymentReference: generatePaymentReference(),
@@ -384,7 +392,7 @@ export default function ThirdPartyTransfers() {
       transactionLocation: "1.38716,3.05117",
       beneficiaryNarration:
         data.narration || `Transfer from ${cleanedAccountName}`,
-      billerId: "ADC19BDC-7D3A-4C00-4F7B-08DA06684F59",
+      billerId: "362",
       initiatorAccountName: cleanedAccountName,
       initiatorAccountNumber: selectedAccount.accountNumber,
     };

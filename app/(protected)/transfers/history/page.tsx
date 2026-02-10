@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { appStore } from "@/store";
 import { getTransferHistory } from "@/services/apiAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +41,12 @@ const TransferHistory = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const transferHistoryArray = transferHistory?.data
+  const transfers = transferHistory?.data ?? [];
+
+  // Create reversed version without mutating original
+  const sortedTransfers = useMemo(() => {
+    return [...transfers].reverse();
+  }, [transfers]);
 
 
   if (isLoading) return <Loading />;
@@ -69,9 +74,9 @@ const TransferHistory = () => {
           </Card>
         ) : (
           <div className="space-y-5">
-            {[transferHistoryArray].reverse().map((transfer: any, index: number) => {
-              const isOutgoing = transfer.originatorAccountNumber === accountNumber;
-              const isSuccessful = transfer.responseCode === "Posted";
+            {sortedTransfers.map((transfer: any, index: number) => {
+              const isOutgoing = transfer?.originatorAccountNumber === accountNumber;
+              const isSuccessful = transfer?.responseCode === "Posted";
 
               return (
                 <Card

@@ -6,5 +6,9 @@
 export function generatePaymentReference(): string {
   const prefix = "NIPMINI1/";
   const timestamp = new Date().getTime();
-  return `${prefix}${timestamp}`;
+  const random12 = Array.from({ length: 12 }, () =>
+    Math.floor(Math.random() * 10),
+  ).join("");
+
+  return `${prefix}${random12}${timestamp}`;
 }

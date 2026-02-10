@@ -1,6 +1,7 @@
 // src/utils/generateTransactionId.ts
 export const generateTransactionId = () => {
-  const clientId = "000525";
+  // const clientId = "999283";
+  const clientId = "090736"
 
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);

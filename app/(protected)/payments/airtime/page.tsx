@@ -121,6 +121,7 @@ export default function AirtimePayment() {
         const excludeKeywords = [
           "data",
           "bundle",
+          "bundles",
           "waec",
           "postpaid",
           "form",
