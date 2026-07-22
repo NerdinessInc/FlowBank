@@ -114,7 +114,7 @@ export const sidebarRoutes: Route[] = [
 		],
 	},
 	{
-		label: 'Payments',
+		label: 'Bill Payments',
 		pathname: '/payments',
 		icon: <Wallet className='h-4 w-4' />,
 		children: [

@@ -301,7 +301,7 @@ export default function DataPayment() {
         paymentCode: pendingTransaction.paymentCode,
         customerId: pendingTransaction.customerMobile, // or real customer ID if available
         customerMobile: pendingTransaction.customerMobile,
-        customerEmail: userData?.userRec?.email || "noemail@nomase.com",
+        customerEmail: userData?.userRec?.email || "noemail@gmail.com",
         amount: pendingTransaction.amountKobo, // in kobo
         requestReference,
         createdAt: new Date().toISOString(),

@@ -21,25 +21,25 @@ export const Sidebar = () => {
 	const [openItems, setOpenItems] = useState<string[]>([]);
 
 	return (
-		<nav className='grid items-start px-4 text-sm font-medium gap-1'>
-			<div className='h-14 flex items-center'>
-				<h2 className='text-xl font-bold'>Nomase MFB</h2>
-			</div>
+    <nav className="grid items-start px-4 text-sm font-medium gap-1">
+      <div className="h-14 flex items-center">
+        {/* <h2 className="text-xl font-bold">FlowBank</h2> */}
+      </div>
 
-			{renderRoutes({
-				routes: sidebarRoutes,
-				level: 0,
-				pathname,
-				openItems,
-				setOpenItems,
-			})}
+      {renderRoutes({
+        routes: sidebarRoutes,
+        level: 0,
+        pathname,
+        openItems,
+        setOpenItems,
+      })}
 
-			<div className='mt-12 px-4'>
-				<Button variant={'outline'} className='gap-2' onClick={logout}>
-					<LogOut className='h-4 w-4' />
-					Log Out
-				</Button>
-			</div>
-		</nav>
-	);
+      <div className="mt-12 px-4">
+        <Button variant={"outline"} className="gap-2" onClick={logout}>
+          <LogOut className="h-4 w-4" />
+          Log Out
+        </Button>
+      </div>
+    </nav>
+  );
 };

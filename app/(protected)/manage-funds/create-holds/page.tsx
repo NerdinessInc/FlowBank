@@ -60,7 +60,7 @@ export default function CreateHolds() {
 	};
 
 	return (
-		<main className='h-full w-full flex flex-col gap-6 items-center md:justify-center'>
+		<main className='h-full w-full flex flex-col gap-6 items-center mt-6 md:justify-center'>
 			<h2 className='text-2xl font-bold'>Accounts Hold Maintenance</h2>
 
 			<Form {...methods}>

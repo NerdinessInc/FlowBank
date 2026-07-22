@@ -134,15 +134,14 @@ export default function Dashboard() {
 
   if (isLoading) return <Loading />;
   if (error) return <div className="text-red-500">{error}</div>;
-  if (!userData || !userData.acctCollection) return <Loading />;
 
-  // Use updatedAccounts if available, else fallback to userData.acctCollection
-  const accountsToDisplay = updatedAccounts.length ? updatedAccounts : userData.acctCollection;
+  // Use updatedAccounts if available, else fallback to userData.acctCollection or empty array
+  const accountsToDisplay = updatedAccounts.length ? updatedAccounts : (userData?.acctCollection || []);
 
   return (
     <main className="h-full w-full flex flex-col gap-6">
       <h2 className="text-2xl font-bold">
-        Welcome, {userData?.acctCollection[0].accountName}
+        Welcome, {userData?.acctCollection?.[0]?.accountName || "User"}
       </h2>
 
       <div className="grid gap-2 md:grid-cols-3">

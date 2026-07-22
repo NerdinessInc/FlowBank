@@ -9,7 +9,7 @@ const TOKEN_URL = process.env.NEXT_PUBLIC_TOKEN_URL;
 
 const TOKEN_KEY = "auth_token";
 const TOKEN_EXPIRY_KEY = "auth_token_expiry";
-const USER_ROLE_KEY = "nomase_user";
+const USER_ROLE_KEY = "flowbank_user";
 
 let currentToken: string | null = null;
 let tokenRefreshPromise: Promise<void> | null = null;
@@ -104,7 +104,7 @@ const refreshToken = async () => {
       {
         userName: API_USERNAME,
         password: API_PASSWORD,
-      }
+      },
     );
 
     if (response.data?.token) {
@@ -148,10 +148,10 @@ export const startTokenRefresh = (intervalMs = 5 * 60 * 1000) => {
 export const logout = async () => {
   clearCookie(TOKEN_KEY);
   clearCookie(TOKEN_EXPIRY_KEY);
-  clearCookie("nomase_user");
-  clearCookie("nomase_app");
-  clearCookie("nomase_main");
-  clearCookie("nomase_access");
+  clearCookie("flowbank_user");
+  clearCookie("flowbank_app");
+  clearCookie("flowbank_main");
+  clearCookie("flowbank_access");
   currentToken = null;
 
   if (refreshInterval) {
@@ -190,7 +190,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor
@@ -230,7 +230,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
@@ -245,7 +245,7 @@ export interface ApiResponse<T = any> {
 
 // Generic API request wrapper
 export const apiRequest = async <T = any>(
-  config: AxiosRequestConfig
+  config: AxiosRequestConfig,
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await api(config);

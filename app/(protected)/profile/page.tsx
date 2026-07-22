@@ -17,7 +17,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { appStore } from "@/store";
 import { changePassword } from "@/services/apiAuth";
@@ -45,6 +46,10 @@ type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 export default function ChangePasswordForm() {
   const { userData } = appStore();
   const { toast } = useToast();
+
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
@@ -116,7 +121,7 @@ export default function ChangePasswordForm() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+    <main className=" flex flex-col items-center justify-center p-6 bg-background">
       <div className="w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-8">Change Password</h2>
 
@@ -148,11 +153,21 @@ export default function ChangePasswordForm() {
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter current password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showOldPassword ? "text" : "password"}
+                        placeholder="Enter current password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOldPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showOldPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,11 +181,21 @@ export default function ChangePasswordForm() {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter new password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="Enter new password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showNewPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,11 +209,21 @@ export default function ChangePasswordForm() {
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Confirm new password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm new password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

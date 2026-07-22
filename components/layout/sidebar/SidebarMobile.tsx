@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 // icons
@@ -6,7 +6,7 @@ import { Menu, LogOut } from 'lucide-react';
 
 // components
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 
 // utils
 import { sidebarRoutes, renderRoutes } from '@/utils';
@@ -20,9 +20,15 @@ export const SidebarMobile = () => {
 	const { logout } = appStore();
 
 	const [openItems, setOpenItems] = useState<string[]>([]);
+	const [isOpen, setIsOpen] = useState(false);
+
+	// Close the sidebar when the route changes
+	useEffect(() => {
+		setIsOpen(false);
+	}, [pathname]);
 
 	return (
-		<Sheet>
+		<Sheet open={isOpen} onOpenChange={setIsOpen}>
 			<SheetTrigger asChild>
 				<Button variant='outline' size='icon' className='shrink-0 md:hidden'>
 					<Menu className='h-5 w-5' />
@@ -31,8 +37,9 @@ export const SidebarMobile = () => {
 			</SheetTrigger>
 
 			<SheetContent side='left' className='flex flex-col'>
+				<SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 				<div className='flex items-center'>
-					<h2 className='text-bold text-xl'>Nomase MFB</h2>
+					<h2 className='text-bold text-xl'>FlowBank</h2>
 				</div>
 
 				{renderRoutes({

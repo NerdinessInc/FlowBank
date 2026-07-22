@@ -16,7 +16,7 @@ export default function DashboardLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const [theme, setTheme] = useState('purple'); // Default theme is 'purple'
+	const [theme, setTheme] = useState('light'); // Default theme is 'light'
 
 	const changeTheme = (newTheme: string) => {
 		setTheme(newTheme);
@@ -24,25 +24,25 @@ export default function DashboardLayout({
 
 	return (
 		<ThemeContext.Provider value={{ theme, changeTheme }}>
-			<div className='flex flex-col min-h-screen'>
+			<div className='flex flex-col h-screen overflow-hidden'>
 				{/* Navbar */}
 				<Navbar />
 
-				<div className='flex flex-1'>
+				<div className='flex flex-1 overflow-hidden'>
 					{/* Sidebar (Desktop) */}
-					<div className='hidden md:block md:w-60 border-r bg-muted/40'>
+					<div className='hidden md:block md:w-60 border-r bg-muted/40 overflow-y-auto'>
 						<Sidebar />
 					</div>
 
 					{/* Main Content (takes remaining width) */}
-					<div className='flex-1 flex flex-col'>
+					<div className='flex-1 flex flex-col overflow-hidden'>
 						{/* Sidebar (Mobile) */}
 						<div className='p-3 md:hidden'>
 							<SidebarMobile />
 						</div>
 
 						{/* Page Content */}
-						<main className='flex-1 flex flex-col gap-4 mb-6 p-4 md:gap-6 md:p-6 overflow-auto'>
+						<main className='flex-1 flex flex-col gap-4 p-4 md:gap-6 md:p-6 overflow-auto'>
 							{children}
 						</main>
 					</div>

@@ -5,15 +5,15 @@ export const logout = async (showAlert = true) => {
     // Clear stored tokens and user data from localStorage
     await BrowserStorage.deleteItem("auth_token");
     await BrowserStorage.deleteItem("auth_token_expiry");
-    await BrowserStorage.deleteItem("nomase_user");
+    await BrowserStorage.deleteItem("flowbank_user");
 
     // Clear relevant cookies
     clearCookie("auth_token");
     clearCookie("auth_token_expiry");
-    clearCookie("nomase_user");
-    clearCookie("nomase_app");
-    clearCookie("nomase_main");
-    clearCookie("nomase_access");
+    clearCookie("flowbank_user");
+    clearCookie("flowbank_app");
+    clearCookie("flowbank_main");
+    clearCookie("flowbank_access");
 
     // Optional alert
     if (showAlert && typeof window !== "undefined") {

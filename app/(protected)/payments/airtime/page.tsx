@@ -353,7 +353,7 @@ export default function AirtimePayment() {
         paymentCode: pendingTransaction.paymentCode,
         customerId: pendingTransaction.customerMobile,
         customerMobile: pendingTransaction.customerMobile,
-        customerEmail: userData?.userRec?.email || "noemail@nomase.com",
+        customerEmail: userData?.userRec?.email || "noemail@gmail.com",
         amount: pendingTransaction.amountKobo, // in kobo
         requestReference,
         createdAt: new Date().toISOString(),

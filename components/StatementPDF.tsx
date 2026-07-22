@@ -51,75 +51,75 @@ const styles = StyleSheet.create({
 });
 
 export const StatementPDF = ({ accountHistory }: { accountHistory: any[] }) => (
-	<Document>
-		<Page size='A4' style={styles.page}>
-			<View style={styles.header}>
-				<Text>Nomase</Text>
+  <Document>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.header}>
+        <Text>FlowBank</Text>
 
-				<Text>Statement of Account</Text>
-			</View>
+        <Text>Statement of Account</Text>
+      </View>
 
-			<View style={styles.border}></View>
+      <View style={styles.border}></View>
 
-			<View style={styles.container}>
-				<View style={styles.section}>
-					{/* <Text style={styles.label}>Account Information</Text> */}
-					<Text>Account No: {accountHistory[0].COD_ACCT_NO}</Text>
-					<Text>
-						Opening Balance: NGN{formatCurrency(accountHistory[0].OPENING_BAL)}
-					</Text>
-					<Text>
-						Available Balance: NGN
-						{formatCurrency(accountHistory[0].CLOSING_BAL)}
-					</Text>
-					<Text>Account Type: {accountHistory[0].NAM_PRODUCT}</Text>
-					<Text>
-						Statement Period: {accountHistory[0].pSTART_DATE} -{' '}
-						{accountHistory[0].END_DATE}
-					</Text>
-					<Text>Total Transactions: {accountHistory.length}</Text>
-				</View>
+      <View style={styles.container}>
+        <View style={styles.section}>
+          {/* <Text style={styles.label}>Account Information</Text> */}
+          <Text>Account No: {accountHistory[0].COD_ACCT_NO}</Text>
+          <Text>
+            Opening Balance: NGN{formatCurrency(accountHistory[0].OPENING_BAL)}
+          </Text>
+          <Text>
+            Available Balance: NGN
+            {formatCurrency(accountHistory[0].CLOSING_BAL)}
+          </Text>
+          <Text>Account Type: {accountHistory[0].NAM_PRODUCT}</Text>
+          <Text>
+            Statement Period: {accountHistory[0].pSTART_DATE} -{" "}
+            {accountHistory[0].END_DATE}
+          </Text>
+          <Text>Total Transactions: {accountHistory.length}</Text>
+        </View>
 
-				<View style={styles.section}>
-					{/* <Text style={styles.label}>Customer Information</Text> */}
-					<Text>{accountHistory[0].NAM_CUST_FULL}</Text>
-					<Text>{accountHistory[0].address}</Text>
-				</View>
-			</View>
+        <View style={styles.section}>
+          {/* <Text style={styles.label}>Customer Information</Text> */}
+          <Text>{accountHistory[0].NAM_CUST_FULL}</Text>
+          <Text>{accountHistory[0].address}</Text>
+        </View>
+      </View>
 
-			<View style={styles.border}></View>
+      <View style={styles.border}></View>
 
-			<View style={styles.section}>
-				<View style={[styles.row, styles.headerRow]}>
-					<Text style={styles.column}>Account Number</Text>
-					<Text style={styles.column}>Narration</Text>
-					<Text style={styles.column}>Transaction Date</Text>
-					<Text style={styles.column}>Credit Amount</Text>
-					<Text style={styles.column}>Debit Amount</Text>
-					<Text style={styles.column}>Running Balance</Text>
-				</View>
+      <View style={styles.section}>
+        <View style={[styles.row, styles.headerRow]}>
+          <Text style={styles.column}>Account Number</Text>
+          <Text style={styles.column}>Narration</Text>
+          <Text style={styles.column}>Transaction Date</Text>
+          <Text style={styles.column}>Credit Amount</Text>
+          <Text style={styles.column}>Debit Amount</Text>
+          <Text style={styles.column}>Running Balance</Text>
+        </View>
 
-				{accountHistory.map((account, index) => (
-					<View key={index} style={styles.row}>
-						<Text style={styles.column}>{account.COD_ACCT_NO}</Text>
-						<Text style={styles.column}>{account.TXT_TXN_DESC}</Text>
-						<Text style={styles.column}>{account.DAT_TXN}</Text>
-						<Text style={styles.column}>
-							{account.COD_DRCR === 'CR'
-								? 'NGN ' + formatCurrency(account.AMT_TXN)
-								: '-'}
-						</Text>
-						<Text style={styles.column}>
-							{account.COD_DRCR === 'DR'
-								? 'NGN ' + formatCurrency(account.AMT_TXN)
-								: '-'}
-						</Text>
-						<Text style={styles.column}>
-							NGN{formatCurrency(account.RUNNING_BAL)}
-						</Text>
-					</View>
-				))}
-			</View>
-		</Page>
-	</Document>
+        {accountHistory.map((account, index) => (
+          <View key={index} style={styles.row}>
+            <Text style={styles.column}>{account.COD_ACCT_NO}</Text>
+            <Text style={styles.column}>{account.TXT_TXN_DESC}</Text>
+            <Text style={styles.column}>{account.DAT_TXN}</Text>
+            <Text style={styles.column}>
+              {account.COD_DRCR === "CR"
+                ? "NGN " + formatCurrency(account.AMT_TXN)
+                : "-"}
+            </Text>
+            <Text style={styles.column}>
+              {account.COD_DRCR === "DR"
+                ? "NGN " + formatCurrency(account.AMT_TXN)
+                : "-"}
+            </Text>
+            <Text style={styles.column}>
+              NGN{formatCurrency(account.RUNNING_BAL)}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Page>
+  </Document>
 );

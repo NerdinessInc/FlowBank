@@ -119,74 +119,80 @@ const LoginForm = () => {
   };
 
   return (
-    <main className="w-full h-full flex items-center justify-start gap-[80px]">
-      <Card className="w-full max-w-[380px] py-12 bg-black/30 backdrop-blur-md border-2 border-white/40">
-        <CardContent className="grid gap-4">
-          <Form {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <h2 className="text-white text-[16px] uppercase text-center">
-                Online Banking
-              </h2>
-              <FormField
-                control={methods.control}
-                name="userName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Username"
-                        required
-                        className="border-2 border-white/40 bg-transparent text-white"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={methods.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
+    <main className="w-full min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">FlowBank</h1>
+          <p className="text-gray-500 mt-2">Secure Internet Banking Platform</p>
+        </div>
+        <Card className="w-full border-gray-200 shadow-xl shadow-gray-200/50 bg-white rounded-2xl overflow-hidden">
+          <CardContent className="p-8">
+            <Form {...methods}>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={methods.control}
+                  name="userName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">Username</FormLabel>
+                      <FormControl>
                         <Input
                           {...field}
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Password"
+                          placeholder="Enter your username"
                           required
-                          className="pr-10 border-2 border-white/40 bg-transparent text-white"
+                          className="h-12 border-gray-300 focus-visible:ring-black rounded-xl bg-gray-50 transition-all text-gray-900"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute inset-y-0 right-3 flex items-center"
-                        >
-                          {showPassword ? (
-                            <Eye className="w-4 h-4 text-gray-500" />
-                          ) : (
-                            <EyeOff className="w-4 h-4 text-gray-500" />
-                          )}
-                        </button>
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                className="w-full font-semibold bg-white text-[#9F1FEF] hover:bg-white/90 uppercase text-[14px]"
-                type="submit"
-                disabled={!sessionID || authUserMutation.isPending}
-              >
-                {authUserMutation.isPending ? "Loading..." : "Login"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      {/* <div className='bg-white w-[330px] p-[12px] rounded-md border-l-8 border-[#9F1FEF]'>Bank from home at anytime while doing anything with the best experience.</div> */}
+                <FormField
+                  control={methods.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            required
+                            className="h-12 pr-10 border-gray-300 focus-visible:ring-black rounded-xl bg-gray-50 transition-all text-gray-900"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showPassword ? (
+                              <Eye className="w-5 h-5" />
+                            ) : (
+                              <EyeOff className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  className="w-full h-12 font-medium bg-black text-white hover:bg-gray-800 rounded-xl transition-all shadow-md text-[15px]"
+                  type="submit"
+                  disabled={!sessionID || authUserMutation.isPending}
+                >
+                  {authUserMutation.isPending ? "Authenticating..." : "Sign in"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 };
