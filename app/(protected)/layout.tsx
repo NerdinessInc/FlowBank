@@ -30,7 +30,7 @@ export default function DashboardLayout({
 
 				<div className='flex flex-1 overflow-hidden'>
 					{/* Sidebar (Desktop) */}
-					<div className='hidden md:block md:w-60 border-r bg-muted/40 overflow-y-auto'>
+					<div className='hidden md:block md:w-60 border-r bg-card overflow-y-auto'>
 						<Sidebar />
 					</div>
 

@@ -7,6 +7,14 @@ export function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
+  // Determine institution ID for white-labeling
+  // 1. Check query parameter (e.g. ?institutionId=bank-a) for easy testing
+  // 2. Fallback to a cookie 'institutionId'
+  let institutionId = request.nextUrl.searchParams.get('institutionId') || cookies.get('institutionId')?.value || 'default';
+  
+  const response = NextResponse.next();
+  response.headers.set('x-tenant-id', institutionId);
+
   // if (userData) {
   //   // User is logged in
   //   if (path === "/") {
@@ -22,7 +30,7 @@ export function middleware(request: NextRequest) {
   // }
 
   // Allow the request to continue
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

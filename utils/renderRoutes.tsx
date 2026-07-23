@@ -53,7 +53,8 @@ export const renderRoutes = ({
 							variant='ghost'
 							className={cn(
 								'w-full justify-between',
-								isActive && 'bg-muted',
+								!isActive && 'hover:!bg-black/5 dark:hover:!bg-white/10 hover:!text-foreground',
+								isActive && 'bg-gradient-to-r from-primary to-accent text-white hover:text-white hover:opacity-90',
 								level > 0 && 'pl-8'
 							)}
 						>
@@ -89,7 +90,8 @@ export const renderRoutes = ({
 				variant='ghost'
 				className={cn(
 					'w-full justify-start',
-					isActive && 'bg-muted',
+					!isActive && 'hover:!bg-black/5 dark:hover:!bg-white/10 hover:!text-foreground',
+					isActive && 'bg-gradient-to-r from-primary to-accent text-white hover:text-white hover:opacity-90',
 					level > 0 && 'pl-8'
 				)}
 				asChild

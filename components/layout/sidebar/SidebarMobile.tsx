@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 
 // icons
 import { Menu, LogOut } from 'lucide-react';
+import { useTenant } from "@/components/providers/TenantProvider";
 
 // components
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ export const SidebarMobile = () => {
 	const pathname = usePathname();
 
 	const { logout } = appStore();
+	const tenant = useTenant();
 
 	const [openItems, setOpenItems] = useState<string[]>([]);
 	const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +41,11 @@ export const SidebarMobile = () => {
 			<SheetContent side='left' className='flex flex-col'>
 				<SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 				<div className='flex items-center'>
-					<h2 className='text-bold text-xl'>FlowBank</h2>
+					{tenant.logo ? (
+						<img src={tenant.logo} alt={tenant.name} className="h-8 object-contain" />
+					) : (
+						<h2 className='text-bold text-xl'>{tenant.name}</h2>
+					)}
 				</div>
 
 				{renderRoutes({

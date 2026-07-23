@@ -1,25 +1,14 @@
-import { useTheme } from "@/app/(protected)/layout";
+import { useTenant } from "@/components/providers/TenantProvider";
 
 const Footer = () => {
-  const { theme } = useTheme(); // Access the current theme from context
-
-  const themeColors: { [key: string]: string } = {
-    light: "#ffffff", // White background for the light theme footer
-    dark: "#0a0a0a",
-    purple: "#e424e4", // Hex code for purple-700
-    blue: "#3b82f6", // Hex code for blue-700
-    red: "#ef4444", // Hex code for red-700
-    green: "#10b981", // Hex code for green-700
-  };
-
-  // Default to a color in case theme is not a valid key
-  const backgroundColor = themeColors[theme] || themeColors.light;
-  
-  const isLight = theme === "light";
-  const textColor = isLight ? "text-gray-900" : "text-white";
+  const tenant = useTenant();
+  const isDefault = tenant.id === "default";
+  const footerBgClass = isDefault
+    ? "bg-white text-gray-900 border-gray-200"
+    : "bg-gradient-to-r from-primary to-accent text-white border-primary/20";
 
   return (
-    <footer style={{ backgroundColor }} className={`p-4 ${textColor} transition-colors duration-300 border-t border-gray-200`}>
+    <footer className={`p-4 transition-colors duration-300 border-t ${footerBgClass}`}>
       <div className="container mx-auto text-center">
         <p className="text-sm font-medium">
           &copy; Rubicon {new Date().getFullYear()}. All rights reserved.
