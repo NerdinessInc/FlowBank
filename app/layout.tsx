@@ -13,15 +13,20 @@ const outfit = Outfit({
 	display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: "FlowBank",
-  description: "Internet Banking Platform",
-//   icons: {
-//     icon: "..assets/images/favicon.png",
-//     apple: "..assets/images/favicon.png",
-//     shortcut: "..assets/images/favicon.png",
-//   },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const tenantId = headersList.get('x-tenant-id') || 'default';
+  const config = await getTenantConfig(tenantId);
+  
+  return {
+    title: config.name,
+    description: config.description || "Internet Banking Platform",
+    icons: {
+      icon: config.logo || "/favicon.ico", // Ideally you'd have a specific favicon field, falling back to logo or default
+      apple: config.logo || "/favicon.ico",
+    }
+  };
+}
 
 export default async function RootLayout({
 	children,

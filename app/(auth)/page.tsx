@@ -144,17 +144,17 @@ const LoginForm = () => {
   };
 
   return (
-    <main className="w-full min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8 flex flex-col items-center">
-          {/* {tenant.logo ? ( */}
-            <img src={tenant.logo} alt={tenant.name} className="h-12 object-contain mb-2 rounded-[100%]" />
-           {/* ) : ( */}
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">{tenant.name}</h1>
-           {/* )} */}
-          <p className="text-muted-foreground mt-2">Secure Internet Banking Platform</p>
-        </div>
-        <Card className="w-full border-border shadow-xl bg-card rounded-2xl overflow-hidden">
+    <div className="w-full">
+      <div className="text-center mb-10 flex flex-col items-center">
+        {tenant.logo ? (
+          <img src={tenant.logo} alt={tenant.name} className="h-14 object-contain mb-4 lg:hidden" />
+        ) : (
+          <h1 className="text-3xl font-bold text-foreground tracking-tight lg:hidden mb-2">{tenant.name}</h1>
+        )}
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Welcome Back</h2>
+        <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
+      </div>
+      <Card className="w-full border-border shadow-xl bg-card rounded-2xl overflow-hidden">
           <CardContent className="p-8">
             <Form {...methods}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -221,8 +221,19 @@ const LoginForm = () => {
             </Form>
           </CardContent>
         </Card>
+        
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground">
+            New to {tenant.name}?{" "}
+            <a 
+              href={`/register${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`} 
+              className="text-primary font-semibold hover:underline"
+            >
+              Register here
+            </a>
+          </p>
+        </div>
       </div>
-    </main>
   );
 };
 

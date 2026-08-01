@@ -7,6 +7,13 @@ export type TenantConfig = {
     primaryForeground: string;
     accent: string;
   };
+  description?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  facebook?: string;
+  instagram?: string;
+  whatsapp?: string;
+  backgroundImage?: string;
 };
 
 export const tenants: Record<string, TenantConfig> = {
@@ -19,6 +26,15 @@ export const tenants: Record<string, TenantConfig> = {
       primaryForeground: "#ffffff",
       accent: "#06b6d4", // Cyan accent
     },
+    description:
+      "Empowering your financial future with modern, secure, and reliable banking solutions tailored for you.",
+    contactPhone: "+1 (800) 123-4567",
+    contactEmail: "support@alphabank.com",
+    facebook: "https://facebook.com/alphabank",
+    instagram: "https://instagram.com/alphabank",
+    whatsapp: "+18001234567",
+    backgroundImage:
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop", // Business building
   },
   "bank-b": {
     id: "bank-b",
@@ -29,6 +45,15 @@ export const tenants: Record<string, TenantConfig> = {
       primaryForeground: "#ffffff",
       accent: "#84cc16", // Lime accent
     },
+    description:
+      "Sustainable banking for a greener tomorrow. Experience next-generation finance with Beta.",
+    contactPhone: "+1 (888) 987-6543",
+    contactEmail: "hello@betafinance.org",
+    facebook: "https://facebook.com/betafinance",
+    instagram: "https://instagram.com/betafinance",
+    whatsapp: "+18889876543",
+    backgroundImage:
+      "https://images.skyscrapercenter.com/building/China-Merchants-Bank-Global-Headquarters-Main-Tower-Sanxin-Technology-1747760157657.jpg", // Green finance theme
   },
   default: {
     id: "default",
@@ -39,6 +64,15 @@ export const tenants: Record<string, TenantConfig> = {
       primaryForeground: "#ffffff", // Default light text
       accent: "#171717", // Default black accent to match primary (no blue)
     },
+    description:
+      "Secure Internet Banking Platform. Manage your wealth efficiently and securely.",
+    contactPhone: "+1 (555) 000-0000",
+    contactEmail: "support@flowbank.io",
+    facebook: "https://facebook.com/flowbank",
+    instagram: "https://instagram.com/flowbank",
+    whatsapp: "+15550000000",
+    backgroundImage:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0c6o05jqWp8uxaqOkHE9gKgvcx4Evm84xQ6L-IYAdDZ69jnajzZuCuig&s=10", // Business tech
   },
 };
 

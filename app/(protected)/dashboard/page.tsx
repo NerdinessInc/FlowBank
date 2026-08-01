@@ -1,44 +1,47 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { formatCurrency } from "@/utils/formatNumber";
+import { appStore } from "@/store";
+import { ReturnAcctDetails2 } from "@/services/apiAuth";
 
-// icons
-import { ActivitySquare, Banknote, CreditCard } from "lucide-react";
+// Icons
+import {
+  Eye,
+  EyeOff,
+  Send,
+  CreditCard,
+  Smartphone,
+  FileText,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ChevronRight,
+  Wifi
+} from "lucide-react";
 
-// components
-import { Loading } from "@/components/Loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-// store
-import { appStore } from "@/store";
-
-// utils
-import { formatCurrency } from "@/utils/formatNumber";
-
-// services
-import { ReturnAcctDetails2 } from "@/services/apiAuth";
+import { Button } from "@/components/ui/button";
+import { Loading } from "@/components/Loader";
+import { useTenant } from "@/components/providers/TenantProvider";
+import Link from 'next/link'
 
 export default function Dashboard() {
-  const { userData, appData } = appStore();
+  const tenant = useTenant();
+  const { userData } = appStore();
   const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [updatedAccounts, setUpdatedAccounts] = useState<any[]>([]);
+
+  // UI State
+  const [showBalance, setShowBalance] = useState(true);
 
   // Fetch account details for all accounts on mount
   useEffect(() => {
@@ -55,10 +58,9 @@ export default function Dashboard() {
           puserName: userData.userRec.puserName || "",
         };
 
-        // Fetch details for each account
         const accountPromises = userData.acctCollection.map(async (account: any) => {
           const payload = [{
-            customerID: account.customerID, // Adjust based on your acctCollection structure
+            customerID: account.customerID,
             accountNumber: account.accountNumber,
           }];
           const response = await ReturnAcctDetails2(userRec, payload);
@@ -67,7 +69,6 @@ export default function Dashboard() {
 
         const responses = await Promise.all(accountPromises);
 
-        // Process all responses
         const newAccounts = responses.flatMap((response, index) => {
           if (response.success && response.data) {
             return response.data.map((account: any) => ({
@@ -75,29 +76,20 @@ export default function Dashboard() {
               accountName: account.description,
               availBal: account.availBal,
               namCurrency: account.currency,
-              codAcctType: account.type === "Current" ? "CK" : "SV", // Adjust based on type
-              CustomerID: userData.acctCollection[index].customerID, // Preserve original data
+              codAcctType: account.type === "Current" ? "CK" : "SV",
+              CustomerID: userData.acctCollection[index].customerID,
             }));
           } else {
-            console.error(
-              `Failed to fetch details for account ${userData.acctCollection[index].accountNumber}:`,
-              response.errorMessage
-            );
-            return [userData.acctCollection[index]]; // Fallback to original account data
+            return [userData.acctCollection[index]];
           }
         });
 
         setUpdatedAccounts(newAccounts);
 
-        // Set the first account as selected if available
         if (newAccounts.length > 0) {
           setSelectedAccount(newAccounts[0]);
         }
-
-        // Optionally update the store if needed
-        // appStore.setUserData({ ...userData, acctCollection: newAccounts });
       } catch (err) {
-        console.error("Error fetching account details:", err);
         setError("Something went wrong while fetching account details");
       } finally {
         setIsLoading(false);
@@ -107,7 +99,6 @@ export default function Dashboard() {
     fetchAllAccountDetails();
   }, [userData]);
 
-  // Fallback to userData.acctCollection if updatedAccounts is empty
   useEffect(() => {
     if (userData?.acctCollection && !selectedAccount && !updatedAccounts.length) {
       setSelectedAccount(userData.acctCollection[0] || null);
@@ -116,15 +107,15 @@ export default function Dashboard() {
 
   const selectAccountByNumber = (accountNumber: string) => {
     const selected = (updatedAccounts.length ? updatedAccounts : userData.acctCollection).find(
-      (account: { accountNumber: string }) =>
-        account.accountNumber === accountNumber
+      (account: { accountNumber: string }) => account.accountNumber === accountNumber
     );
     setSelectedAccount(selected);
   };
 
-  console.log("User Data Returned", userData);
-  console.log("App Data", appData);
-  console.log("Updated Accounts", updatedAccounts);
+  if (isLoading) return <Loading />;
+  if (error) return <div className="p-8 text-red-500">{error}</div>;
+
+  const accountsToDisplay = updatedAccounts.length ? updatedAccounts : (userData?.acctCollection || []);
 
   const advertImages: string[] = [
     "https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -132,122 +123,218 @@ export default function Dashboard() {
     "https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ];
 
-  if (isLoading) return <Loading />;
-  if (error) return <div className="text-red-500">{error}</div>;
+  // Calculate total balance across all accounts
+  const totalBalance = accountsToDisplay.reduce((acc, curr) => acc + (Number(curr.availBal) || 0), 0);
+  const primaryCurrency = accountsToDisplay[0]?.namCurrency || "NGN";
 
-  // Use updatedAccounts if available, else fallback to userData.acctCollection or empty array
-  const accountsToDisplay = updatedAccounts.length ? updatedAccounts : (userData?.acctCollection || []);
+  // Mock Transactions
+  const mockTransactions = [
+    { id: 1, title: "Spotify Subscription", type: "debit", amount: 1300.00, date: "Today" },
+    { id: 2, title: "Transfer to JOHN DOE", type: "debit", amount: 45000.00, date: "Yesterday" },
+    { id: 3, title: "EMTL Charges", type: "debit", amount: 50.00, date: "Yesterday" },
+    { id: 4, title: "Transfer to Savings", type: "debit", amount: 5300.00, date: "Oct 12" },
+    { id: 5, title: "POS Withdrawal", type: "debit", amount: 2400.50, date: "Oct 10" },
+  ];
 
   return (
-    <main className="h-full w-full flex flex-col gap-6">
-      <h2 className="text-2xl font-bold">
-        Welcome, {userData?.acctCollection?.[0]?.accountName || "User"}
-      </h2>
-
-      <div className="grid gap-2 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Available Balance
-            </CardTitle>
-            <Banknote />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(Number(selectedAccount?.availBal) || 0.0)}
+    <main className="h-full w-full flex flex-col xl:flex-row gap-8 p-2 md:p-6 lg:p-8">
+      
+      {/* Left Column - Main Dashboard Area */}
+      <div className="flex-1 flex flex-col gap-10">
+        
+        {/* 1. Greeting & Total Balance Hero */}
+        <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-card p-8 rounded-3xl border border-border shadow-sm">
+          <div>
+            <h2 className="text-muted-foreground text-lg mb-1">
+              Welcome back, <span className="text-foreground font-semibold">{userData?.acctCollection?.[0]?.accountName || "User"}</span>
+            </h2>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+                {showBalance ? formatCurrency(totalBalance) : "••••••••"}
+              </h1>
+              <button 
+                onClick={() => setShowBalance(!showBalance)}
+                className="text-muted-foreground hover:text-primary transition-colors p-2 rounded-full hover:bg-muted"
+              >
+                {showBalance ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+              </button>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-sm text-muted-foreground mt-2">Total combined balance in {primaryCurrency}</p>
+          </div>
+        </section>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Account Number
-            </CardTitle>
-            <CreditCard />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {selectedAccount ? selectedAccount.accountNumber : "N/A"}
-            </div>
-          </CardContent>
-        </Card>
+        {/* 2. Quick Actions */}
+        <section>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link href='/statements/full' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">Statement</span>
+            </Link>
+            <Link href='/transfers/other-banks-transfers' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Send className="w-6 h-6 text-primary" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">Transfer</span>
+            </Link>
+            <Link href='/payments/data' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">Buy Data</span>
+            </Link>
+            <Link href='/payments/airtime' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6 text-primary" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">Airtime</span>
+            </Link>
+          </div>
+        </section>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Currency</CardTitle>
-            <ActivitySquare />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {selectedAccount ? selectedAccount.namCurrency : "N/A"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        <Card>
-          <CardHeader className="flex flex-row items-center">
-            <CardTitle>My Accounts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Account Number</TableHead>
-                  <TableHead>Account Title</TableHead>
-                  <TableHead>Currency</TableHead>
-                  <TableHead>Type</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {accountsToDisplay.map((account: any, index: number) => (
-                  <TableRow
+        {/* 3. My Accounts (Virtual Cards) */}
+        <section>
+          <div className="flex justify-between items-end mb-6">
+            <h3 className="text-xl font-bold text-foreground">My Accounts</h3>
+            {/* <Link href='/account-information/my-accounts' variant="ghost" className="text-primary hover:bg-primary/10 font-medium hover:text-black">View All</Link> */}
+          </div>
+          <div className="flex overflow-x-auto gap-6 pb-4 snap-x hide-scrollbar">
+            {accountsToDisplay.length === 0 ? (
+              <div className="w-full min-h-[200px] bg-card border-2 border-border border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center shadow-sm">
+                <CreditCard className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                <p className="text-lg font-bold text-foreground mb-1">No Account found</p>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  We couldn't find any active accounts for your profile. Please contact support or wait while your account is being set up.
+                </p>
+              </div>
+            ) : (
+              accountsToDisplay.map((account: any, index: number) => {
+                const isSelected = selectedAccount?.accountNumber === account.accountNumber;
+                return (
+                  <div 
                     key={index}
                     onClick={() => selectAccountByNumber(account.accountNumber)}
-                    className="cursor-pointer"
+                    className={`min-w-[320px] h-[200px] rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all snap-center relative overflow-hidden shadow-lg ${
+                      isSelected 
+                        ? "bg-gradient-to-br from-primary to-accent text-white scale-100 ring-4 ring-primary/20" 
+                        : "bg-card border border-border text-foreground scale-95 hover:scale-100 opacity-70 hover:opacity-100"
+                    }`}
                   >
-                    <TableCell>{account.accountNumber}</TableCell>
-                    <TableCell>{account.accountName}</TableCell>
-                    <TableCell>{account.namCurrency}</TableCell>
-                    <TableCell>
-                      {account.codAcctType === "CK"
-                        ? "Current Account"
-                        : "Savings Account"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    {/* Decorative background circle */}
+                    <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full mix-blend-overlay opacity-20 ${isSelected ? 'bg-white' : 'bg-primary'}`} />
+                    
+                    <div className="flex justify-between items-center z-10">
+                      <div>
+                        <p className={`text-sm font-medium ${isSelected ? 'text-white/80' : 'text-muted-foreground'}`}>
+                          {account.codAcctType === "CK" ? "Current Account" : "Savings Account"}
+                        </p>
+                        <h4 className="font-bold tracking-wider mt-1">{account.accountNumber}</h4>
+                      </div>
+                      <Wifi className={`w-6 h-6 ${isSelected ? 'text-white' : 'text-muted-foreground'} rotate-90`} />
+                    </div>
+
+                    <div className="z-10">
+                      <p className={`text-sm mb-1 ${isSelected ? 'text-white/80' : 'text-muted-foreground'}`}>Available Balance</p>
+                      <p className="text-3xl font-extrabold tracking-tight">
+                        {showBalance ? formatCurrency(Number(account.availBal) || 0) : "••••••••"}
+                      </p>
+                      <p className={`text-xs mt-1 font-medium ${isSelected ? 'text-white/60' : 'text-muted-foreground/60'}`}>
+                        Total Balance: {showBalance ? formatCurrency(Number(account.totalBal || account.availBal) || 0) : "••••••••"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        {/* 4. Recent Transactions */}
+        <section>
+          <div className="flex justify-between items-end mb-6">
+            <h3 className="text-xl font-bold text-foreground">Recent Transfers</h3>
+            <Link href='/transfers/history' variant="ghost" className="text-primary hover:bg-primary/10 font-medium">See Full History</Link>
+          </div>
+          <Card className="rounded-3xl border-border shadow-sm overflow-hidden">
+            <div className="divide-y divide-border">
+              {mockTransactions.map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between p-5 hover:bg-muted/50 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-rose-500/10`}>
+                      <ArrowUpRight className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground group-hover:text-primary transition-colors">{tx.title}</p>
+                      <p className="text-sm text-muted-foreground">{tx.date}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold ${tx.type === 'credit' ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                    </p>
+                    <p className="text-sm text-muted-foreground capitalize">{tx.type}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+
       </div>
 
-      <Carousel
-        className="mt-4"
-        opts={{ loop: true }}
-        plugins={[
-          Autoplay({
-            delay: 5000,
-          }),
-        ]}
-      >
-        <CarouselContent>
-          {advertImages.map((image, index) => (
-            <CarouselItem className="relative w-full h-[300px]" key={index}>
-              <div className="w-full h-full">
-                <Image
-                  src={image}
-                  fill
-                  alt={`image ${index + 1}`}
-                  className="object-cover"
-                />
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-      </Carousel>
+      {/* Right Column - Sidebar / Promos */}
+      <div className="w-full xl:w-[350px] flex flex-col gap-8">
+        
+        {/* Promotional Banner */}
+        <Card className="bg-gradient-to-br from-primary to-accent border-0 shadow-lg rounded-3xl overflow-hidden relative text-white p-8">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" ></div>
+          <h3 className="text-2xl font-bold mb-3 relative z-10">InvestToday 3.0</h3>
+          <p className="text-white/80 mb-6 relative z-10 text-sm leading-relaxed">
+            Visit our website to check out our investment plans and invest with us today!
+          </p>
+          <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-xl font-bold h-12 relative z-10">
+            Learn More
+          </Button>
+        </Card>
+
+        {/* Carousel Banner */}
+        <Carousel
+          className="w-full rounded-3xl overflow-hidden shadow-sm"
+          opts={{ loop: true }}
+          plugins={[
+            Autoplay({
+              delay: 5000,
+            }),
+          ]}
+        >
+          <CarouselContent>
+            {advertImages.map((image, index) => (
+              <CarouselItem className="relative w-full h-[250px]" key={index}>
+                <div className="w-full h-full">
+                  <Image
+                    src={image}
+                    fill
+                    alt={`advertisement ${index + 1}`}
+                    className="object-cover"
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+      </div>
+
+      {/* Add some custom styles for hiding scrollbar */}
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </main>
   );
 }

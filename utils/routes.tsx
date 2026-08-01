@@ -28,7 +28,7 @@ export interface Route {
 
 export const sidebarRoutes: Route[] = [
 	{
-		label: 'Dashboard',
+		label: 'Home',
 		pathname: '/dashboard',
 		icon: <Home className='h-4 w-4' />,
 	},

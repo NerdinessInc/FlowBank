@@ -1,35 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const DOMAIN_TO_TENANT: Record<string, string> = {
+  "banka.com": "bank-a",
+  "betafinance.org": "bank-b",
+  "flowbank.io": "default",
+};
+
 export function middleware(request: NextRequest) {
   const cookies = request.cookies;
+  const url = request.nextUrl;
 
-  const userData = cookies.get("flowbank_user")?.value || null;
+  // 1. Get the Host header (e.g., "banka.com", "localhost:3000")
+  const hostname = request.headers.get("host") || "";
 
-  const path = request.nextUrl.pathname;
+  // Strip the port if present (localhost:3000 -> localhost)
+  const domain = hostname.split(":")[0];
 
-  // Determine institution ID for white-labeling
-  // 1. Check query parameter (e.g. ?institutionId=bank-a) for easy testing
-  // 2. Fallback to a cookie 'institutionId'
-  let institutionId = request.nextUrl.searchParams.get('institutionId') || cookies.get('institutionId')?.value || 'default';
-  
-  const response = NextResponse.next();
-  response.headers.set('x-tenant-id', institutionId);
+  // 2. Look up the tenant ID based on the domain
+  let institutionId = DOMAIN_TO_TENANT[domain];
 
-  // if (userData) {
-  //   // User is logged in
-  //   if (path === "/") {
-  //     // Redirect to dashboard if trying to access login page
-  //     return NextResponse.redirect(new URL("/dashboard", request.url));
-  //   }
-  // } else {
-  //   // User is not logged in
-  //   if (path !== "/") {
-  //     // Redirect to login for any page other than login
-  //     return NextResponse.redirect(new URL("/", request.url));
-  //   }
-  // }
+  // 3. Fallbacks for local development testing
+  if (!institutionId) {
+    institutionId =
+      url.searchParams.get("institutionId") ||
+      cookies.get("institutionId")?.value ||
+      "default";
+  }
 
-  // Allow the request to continue
+  // 4. Create a new Headers object from the incoming request
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-tenant-id", institutionId);
+
+  // 5. Create the response and attach the modified request headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Optional: Also set it on the response so the browser sees it in the network tab
+  response.headers.set("x-tenant-id", institutionId);
+
   return response;
 }
 
