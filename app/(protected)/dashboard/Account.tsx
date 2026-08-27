@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ReturnAcctDetails2 } from "@/services/apiAuth";
+import { ReturnAcctDetails2 } from "@/services/api";
 
-export default function AccountDetails({ reqType, userRec, accounts }) {
+export default function AccountDetails({ reqType, userRec, accounts }: { reqType: any; userRec: any; accounts: any; }) {
   const [accountDetails, setAccountDetails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

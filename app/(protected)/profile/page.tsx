@@ -62,11 +62,12 @@ export default function ChangePasswordForm() {
     mode: "onChange",
   });
 
+  const actualUserName = (userData?.userRec as any)?.puserName || userData?.userRec?.pUserName;
   useEffect(() => {
-    if (userData?.userRec?.puserName) {
-      form.setValue("userName", userData.userRec.puserName);
+    if (actualUserName) {
+      form.setValue("userName", actualUserName);
     }
-  }, [userData?.userRec?.puserName, form]);
+  }, [actualUserName, form]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: ({

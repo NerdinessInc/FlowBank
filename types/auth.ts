@@ -11,7 +11,7 @@ export interface UserDataResponse {
 	enumRec: EnumRec;
 	userRec: UserRec;
 	oraresp: Oraresp;
-	acctCollection: AcctCollection;
+	acctCollection: any;
 	NumberOfAccounts: number;
 	userdat: string;
 	cod_prod: CodProd;

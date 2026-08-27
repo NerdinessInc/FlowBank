@@ -15,6 +15,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Loading } from '@/components/Loader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
 	Form,
 	FormControl,
@@ -237,7 +238,13 @@ export default function StopPayment() {
 						render={({ field }) => (
 							<FormItem className='flex flex-col w-full'>
 								<FormLabel>Date</FormLabel>
-								<Input {...field} placeholder='Enter your date' type='date' />
+								<FormControl>
+									<DatePicker 
+										value={field.value} 
+										onChange={field.onChange} 
+										placeholder='Enter your date' 
+									/>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}

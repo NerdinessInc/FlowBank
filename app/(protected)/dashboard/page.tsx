@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/Loader";
 import { useTenant } from "@/components/providers/TenantProvider";
 import Link from 'next/link'
+import { FeatureGuard } from "@/components/guards/FeatureGuard";
 
 export default function Dashboard() {
   const tenant = useTenant();
@@ -54,8 +55,8 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const userRec = {
-          accCode: userData.userRec.accCode || "",
-          puserName: userData.userRec.puserName || "",
+          accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+          puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
         };
 
         const accountPromises = userData.acctCollection.map(async (account: any) => {
@@ -106,7 +107,7 @@ export default function Dashboard() {
   }, [userData, selectedAccount, updatedAccounts]);
 
   const selectAccountByNumber = (accountNumber: string) => {
-    const selected = (updatedAccounts.length ? updatedAccounts : userData.acctCollection).find(
+    const selected = (updatedAccounts.length ? updatedAccounts : (userData?.acctCollection || [])).find(
       (account: { accountNumber: string }) => account.accountNumber === accountNumber
     );
     setSelectedAccount(selected);
@@ -116,15 +117,9 @@ export default function Dashboard() {
   if (error) return <div className="p-8 text-red-500">{error}</div>;
 
   const accountsToDisplay = updatedAccounts.length ? updatedAccounts : (userData?.acctCollection || []);
-
-  const advertImages: string[] = [
-    "https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1725714835081-118a2b0456b2?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  ];
-
+  const advertData = tenant.advert;
   // Calculate total balance across all accounts
-  const totalBalance = accountsToDisplay.reduce((acc, curr) => acc + (Number(curr.availBal) || 0), 0);
+  const totalBalance = accountsToDisplay.reduce((acc: number, curr: any) => acc + (Number(curr.availBal) || 0), 0);
   const primaryCurrency = accountsToDisplay[0]?.namCurrency || "NGN";
 
   // Mock Transactions
@@ -184,12 +179,14 @@ export default function Dashboard() {
               </div>
               <span className="font-semibold text-sm text-foreground">Buy Data</span>
             </Link>
-            <Link href='/payments/airtime' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Smartphone className="w-6 h-6 text-primary" />
-              </div>
-              <span className="font-semibold text-sm text-foreground">Airtime</span>
-            </Link>
+            <FeatureGuard featureKey="loans">
+              <Link href='#' className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all group">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                </div>
+                <span className="font-semibold text-sm text-foreground">Loans</span>
+              </Link>
+            </FeatureGuard>
           </div>
         </section>
 
@@ -254,7 +251,7 @@ export default function Dashboard() {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-bold text-foreground">Recent Transfers</h3>
-            <Link href='/transfers/history' variant="ghost" className="text-primary hover:bg-primary/10 font-medium">See Full History</Link>
+            <Link href='/transfers/history' className="text-primary hover:bg-primary/10 font-medium px-4 py-2 rounded-md transition-colors">See Full History</Link>
           </div>
           <Card className="rounded-3xl border-border shadow-sm overflow-hidden">
             <div className="divide-y divide-border">
@@ -287,42 +284,48 @@ export default function Dashboard() {
       <div className="w-full xl:w-[350px] flex flex-col gap-8">
         
         {/* Promotional Banner */}
-        <Card className="bg-gradient-to-br from-primary to-accent border-0 shadow-lg rounded-3xl overflow-hidden relative text-white p-8">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" ></div>
-          <h3 className="text-2xl font-bold mb-3 relative z-10">InvestToday 3.0</h3>
-          <p className="text-white/80 mb-6 relative z-10 text-sm leading-relaxed">
-            Visit our website to check out our investment plans and invest with us today!
-          </p>
-          <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-xl font-bold h-12 relative z-10">
-            Learn More
-          </Button>
-        </Card>
+        {advertData && (
+          <>
+            <Card className="bg-gradient-to-br from-primary to-accent border-0 shadow-lg rounded-3xl overflow-hidden relative text-white p-8">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-2xl" ></div>
+              <h3 className="text-2xl font-bold mb-3 relative z-10">{advertData.title}</h3>
+              <p className="text-white/80 mb-6 relative z-10 text-sm leading-relaxed">
+                {advertData.description}
+              </p>
+              <Button asChild className="w-full bg-white text-primary hover:bg-white/90 rounded-xl font-bold h-12 relative z-10">
+                <Link href={advertData.link}>
+                  {advertData.buttonText}
+                </Link>
+              </Button>
+            </Card>
 
-        {/* Carousel Banner */}
-        <Carousel
-          className="w-full rounded-3xl overflow-hidden shadow-sm"
-          opts={{ loop: true }}
-          plugins={[
-            Autoplay({
-              delay: 5000,
-            }),
-          ]}
-        >
-          <CarouselContent>
-            {advertImages.map((image, index) => (
-              <CarouselItem className="relative w-full h-[250px]" key={index}>
-                <div className="w-full h-full">
-                  <Image
-                    src={image}
-                    fill
-                    alt={`advertisement ${index + 1}`}
-                    className="object-cover"
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+            {/* Carousel Banner */}
+            <Carousel
+              className="w-full rounded-3xl overflow-hidden shadow-sm"
+              opts={{ loop: true }}
+              plugins={[
+                Autoplay({
+                  delay: 5000,
+                }),
+              ]}
+            >
+              <CarouselContent>
+                {advertData.images.map((image, index) => (
+                  <CarouselItem className="relative w-full h-[250px]" key={index}>
+                    <div className="w-full h-full">
+                      <Image
+                        src={image}
+                        fill
+                        alt={`advertisement ${index + 1}`}
+                        className="object-cover"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </>
+        )}
       </div>
 
       {/* Add some custom styles for hiding scrollbar */}

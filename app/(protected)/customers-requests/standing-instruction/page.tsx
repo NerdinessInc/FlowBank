@@ -8,6 +8,7 @@ import { z } from 'zod';
 // components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 
 import {
@@ -171,11 +172,13 @@ export default function StandingInstruction() {
 								render={({ field }) => (
 									<FormItem className='flex flex-col w-full'>
 										<FormLabel>Start Date</FormLabel>
-										<Input
-											{...field}
-											placeholder='Enter your start date'
-											type='date'
-										/>
+										<FormControl>
+											<DatePicker 
+												value={field.value} 
+												onChange={field.onChange} 
+												placeholder='Enter your start date' 
+											/>
+										</FormControl>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -186,11 +189,13 @@ export default function StandingInstruction() {
 								render={({ field }) => (
 									<FormItem className='flex flex-col w-full'>
 										<FormLabel>End Date</FormLabel>
-										<Input
-											{...field}
-											placeholder='Enter your end date'
-											type='date'
-										/>
+										<FormControl>
+											<DatePicker 
+												value={field.value} 
+												onChange={field.onChange} 
+												placeholder='Enter your end date' 
+											/>
+										</FormControl>
 										<FormMessage />
 									</FormItem>
 								)}

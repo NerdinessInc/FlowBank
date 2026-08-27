@@ -78,8 +78,8 @@ export default function InterBankLocalTransfers() {
       }
 
       const userRec = {
-        accCode: userData.userRec.accCode || "",
-        puserName: userData.userRec.puserName || "",
+        accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+        puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
       };
 
       const accountPromises = userData.acctCollection.map(
@@ -126,7 +126,7 @@ export default function InterBankLocalTransfers() {
 
   // Transfer mutation (now called only after OTP)
   const { mutate } = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: any) => {
       const response = await internalTransfer(payload);
       if (response?.retVal !== "00") {
         const error = new Error(
@@ -221,7 +221,7 @@ export default function InterBankLocalTransfers() {
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
-      const limit = userData?.pLimitsObject?.find(
+      const limit = (userData?.pLimitsObject as any)?.find(
         (limit: any) => limit.accountnumber === sourceAccount
       )?.interBankLimit;
       setValue("dailyTransferLimit", Number(limit) || 0);
@@ -229,7 +229,7 @@ export default function InterBankLocalTransfers() {
   }, [watch("sourceAccount"), userData, setValue]);
 
   // Name enquiry query
-  const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry } = useQuery({
+  const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry, isError: isNameEnquiryError } = useQuery({
     queryKey: ["name-enquiry", watch("destinationAccount")],
     queryFn: () =>
       returnNameEnquiryNomase({
@@ -239,9 +239,6 @@ export default function InterBankLocalTransfers() {
       !!watch("destinationAccount") &&
       /^[0-9]+$/.test(watch("destinationAccount")) &&
       watch("destinationAccount").length >= 10,
-    onError: () => {
-      setNameEnquiryError("Invalid account number. Please try again.");
-    },
   });
 
   useEffect(() => {
@@ -252,8 +249,10 @@ export default function InterBankLocalTransfers() {
         "destinationAccountName",
         nameEnquiryData.data?.data?.cod_acct_title
       );
+    } else if (isNameEnquiryError) {
+      setNameEnquiryError("Invalid account number. Please try again.");
     }
-  }, [nameEnquiryData, setValue]);
+  }, [nameEnquiryData, isNameEnquiryError, setValue]);
 
   // Set selected account
   useEffect(() => {
@@ -432,7 +431,7 @@ export default function InterBankLocalTransfers() {
    try {
      const response = await validateOtp({
        token,
-       userName: userData?.userRec?.puserName || "",
+       userName: (userData?.userRec as any)?.puserName || userData?.userRec?.pUserName || "",
      });
 
     if (response.success || response.retVal === 0 || response.retMsg === "Code verified successfully") {
@@ -686,7 +685,7 @@ export default function InterBankLocalTransfers() {
               {otp.map((digit, i) => (
                 <Input
                   key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
+                  ref={(el) => { otpRefs.current[i] = el; }}
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}

@@ -45,8 +45,8 @@ export default function AccountSummary() {
         setError(null);
 
         const userRec = {
-          accCode: userData.userRec.accCode || "",
-          puserName: userData.userRec.puserName || "",
+          accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+          puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
         };
 
         const fetchPromises = userData.acctCollection.map(async (acct: any) => {
@@ -85,7 +85,7 @@ export default function AccountSummary() {
                 availableBalance: acct.availBal || 0,
                 currency: acct.namCurrency || "NAIRA",
                 accountType: acct.codAcctType === "CK" ? "Current" : "Savings",
-              };
+              } as AccountDetail;
             }
           } catch (err) {
             console.error(`Error fetching ${acct.accountNumber}:`, err);
@@ -97,7 +97,7 @@ export default function AccountSummary() {
               availableBalance: acct.availBal || 0,
               currency: acct.namCurrency || "NAIRA",
               accountType: acct.codAcctType === "CK" ? "Current" : "Savings",
-            };
+            } as AccountDetail;
           }
         });
 

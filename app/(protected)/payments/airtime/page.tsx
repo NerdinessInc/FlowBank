@@ -80,7 +80,7 @@ export default function AirtimePayment() {
     (AirtimeFormValues & { paymentCode: string; amountKobo: number }) | null
   >(null);
 
-  const userName = userData?.userRec?.puserName || "";
+  const userName = (userData?.userRec as any)?.puserName || userData?.userRec?.pUserName || "";
 
   const form = useForm<AirtimeFormValues>({
     resolver: zodResolver(airtimeSchema),
@@ -211,8 +211,8 @@ export default function AirtimePayment() {
       }
 
       const userRec = {
-        accCode: userData.userRec.accCode || "",
-        puserName: userData.userRec.puserName || "",
+        accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+        puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
       };
 
       const accountPromises = userData.acctCollection.map(
@@ -353,7 +353,7 @@ export default function AirtimePayment() {
         paymentCode: pendingTransaction.paymentCode,
         customerId: pendingTransaction.customerMobile,
         customerMobile: pendingTransaction.customerMobile,
-        customerEmail: userData?.userRec?.email || "noemail@gmail.com",
+        customerEmail: (userData?.userRec as any)?.email || "noemail@gmail.com",
         amount: pendingTransaction.amountKobo, // in kobo
         requestReference,
         createdAt: new Date().toISOString(),
@@ -527,7 +527,7 @@ export default function AirtimePayment() {
               {otp.map((digit, i) => (
                 <Input
                   key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
+                  ref={(el) => { otpRefs.current[i] = el; }}
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}

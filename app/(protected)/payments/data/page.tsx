@@ -82,7 +82,7 @@ export default function DataPayment() {
   const selectedBillerId = form.watch("networkProvider");
 
   // Load username (for OTP)
-  const userName = userData?.userRec?.puserName || "";
+  const userName = (userData?.userRec as any)?.puserName || userData?.userRec?.pUserName || "";
 
   // Fetch accounts (same as before)
   const {
@@ -96,8 +96,8 @@ export default function DataPayment() {
       }
 
       const userRec = {
-        accCode: userData.userRec.accCode || "",
-        puserName: userData.userRec.puserName || "",
+        accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+        puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
       };
 
       const accountPromises = userData.acctCollection.map(async (account: any) => {
@@ -301,7 +301,7 @@ export default function DataPayment() {
         paymentCode: pendingTransaction.paymentCode,
         customerId: pendingTransaction.customerMobile, // or real customer ID if available
         customerMobile: pendingTransaction.customerMobile,
-        customerEmail: userData?.userRec?.email || "noemail@gmail.com",
+        customerEmail: (userData?.userRec as any)?.email || "noemail@gmail.com",
         amount: pendingTransaction.amountKobo, // in kobo
         requestReference,
         createdAt: new Date().toISOString(),
@@ -484,7 +484,7 @@ export default function DataPayment() {
               {otp.map((digit, i) => (
                 <Input
                   key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
+                  ref={(el) => { otpRefs.current[i] = el; }}
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}

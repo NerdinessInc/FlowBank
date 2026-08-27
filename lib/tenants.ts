@@ -1,3 +1,6 @@
+import fs from 'fs/promises';
+import path from 'path';
+
 export type TenantConfig = {
   id: string;
   name: string;
@@ -7,6 +10,21 @@ export type TenantConfig = {
     primaryForeground: string;
     accent: string;
   };
+  api: {
+    baseUrl: string;
+    version: string;
+  };
+  advert?: {
+    title: string;
+    description: string;
+    buttonText: string;
+    link: string;
+    images: string[];
+  };
+  features?: {
+    [key: string]: boolean;
+  };
+  font?: "outfit" | "geist-mono" | "poppins";
   description?: string;
   contactPhone?: string;
   contactEmail?: string;
@@ -16,69 +34,77 @@ export type TenantConfig = {
   backgroundImage?: string;
 };
 
-export const tenants: Record<string, TenantConfig> = {
-  "bank-a": {
-    id: "bank-a",
-    name: "Alpha Bank",
-    logo: "https://png.pngtree.com/png-vector/20190215/ourmid/pngtree-vector-bank-icon-png-image_532993.jpg", // Assuming we have these in public/ later
-    colors: {
-      primary: "#0052cc", // A distinct blue
-      primaryForeground: "#ffffff",
-      accent: "#06b6d4", // Cyan accent
-    },
-    description:
-      "Empowering your financial future with modern, secure, and reliable banking solutions tailored for you.",
-    contactPhone: "+1 (800) 123-4567",
-    contactEmail: "support@alphabank.com",
-    facebook: "https://facebook.com/alphabank",
-    instagram: "https://instagram.com/alphabank",
-    whatsapp: "+18001234567",
-    backgroundImage:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop", // Business building
+// Fallback config in case the public/tenant-config.json file is ever accidentally deleted
+const fallbackConfig: TenantConfig = {
+  id: "default",
+  name: "FlowBank",
+  logo: "/assets/logo.png",
+  colors: {
+    primary: "#171717",
+    primaryForeground: "#ffffff",
+    accent: "#171717",
   },
-  "bank-b": {
-    id: "bank-b",
-    name: "Beta Finance",
-    logo: "https://static.vecteezy.com/system/resources/previews/021/944/628/non_2x/bank-logo-or-icon-design-on-white-background-illustration-vector.jpg",
-    colors: {
-      primary: "#16a34a", // A distinct green
-      primaryForeground: "#ffffff",
-      accent: "#84cc16", // Lime accent
-    },
-    description:
-      "Sustainable banking for a greener tomorrow. Experience next-generation finance with Beta.",
-    contactPhone: "+1 (888) 987-6543",
-    contactEmail: "hello@betafinance.org",
-    facebook: "https://facebook.com/betafinance",
-    instagram: "https://instagram.com/betafinance",
-    whatsapp: "+18889876543",
-    backgroundImage:
-      "https://images.skyscrapercenter.com/building/China-Merchants-Bank-Global-Headquarters-Main-Tower-Sanxin-Technology-1747760157657.jpg", // Green finance theme
+  api: {
+    baseUrl: "https://api.flowbank.com",
+    version: "v1"
   },
-  default: {
-    id: "default",
-    name: "FlowBank",
-    logo: "https://static.vecteezy.com/system/resources/thumbnails/013/948/616/small/bank-icon-logo-design-vector.jpg", // Fallback logo
-    colors: {
-      primary: "#171717", // Default dark
-      primaryForeground: "#ffffff", // Default light text
-      accent: "#171717", // Default black accent to match primary (no blue)
-    },
-    description:
-      "Secure Internet Banking Platform. Manage your wealth efficiently and securely.",
-    contactPhone: "+1 (555) 000-0000",
-    contactEmail: "support@flowbank.io",
-    facebook: "https://facebook.com/flowbank",
-    instagram: "https://instagram.com/flowbank",
-    whatsapp: "+15550000000",
-    backgroundImage:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0c6o05jqWp8uxaqOkHE9gKgvcx4Evm84xQ6L-IYAdDZ69jnajzZuCuig&s=10", // Business tech
+  features: {
+    "dashboard": true,
+    "profile": true,
+    "accountInformation": true,
+    "myAccounts": true,
+    "accountSummary": true,
+    "timeDeposits": true,
+    "statements": true,
+    "statementCr": true,
+    "statementDr": true,
+    "statementFull": true,
+    "transfers": true,
+    "transferOtherBanks": true,
+    "transferInternal": true,
+    "transferHistory": true,
+    "billPayments": true,
+    "billAirtime": true,
+    "billData": true,
+    "customerRequests": true,
+    "reqChequeBook": true,
+    "reqStopPayment": true,
+    "reqMiscellaneous": true,
+    "standingInstructions": true,
+    "manageFunds": true,
+    "createHolds": true,
+    "loans": true
   },
+  font: "outfit",
+  advert: {
+    title: "InvestToday 3.0",
+    description: "Visit our website to check out our investment plans and invest with us today!",
+    buttonText: "Learn More",
+    link: "#",
+    images: [
+      "https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1725714835081-118a2b0456b2?q=80&w=1470&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop"
+    ]
+  },
+  description: "Secure Internet Banking Platform. Manage your wealth efficiently and securely.",
+  contactPhone: "+1 (555) 000-0000",
+  contactEmail: "support@flowbank.io",
+  facebook: "https://facebook.com/flowbank",
+  instagram: "https://instagram.com/flowbank",
+  whatsapp: "+15550000000",
+  backgroundImage: "/assets/background.png"
 };
 
-export async function getTenantConfig(institutionId: string): Promise<TenantConfig> {
-  // In a real application, this would fetch from a database.
-  // We simulate a network delay.
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  return tenants[institutionId] || tenants['default'];
+export async function getTenantConfig(institutionId?: string): Promise<TenantConfig> {
+  try {
+    // Dynamically read the tenant-config.json deployed in the public directory
+    const configPath = path.join(process.cwd(), 'public', 'tenant-config.json');
+    const fileContent = await fs.readFile(configPath, 'utf8');
+    const config: TenantConfig = JSON.parse(fileContent);
+    return config;
+  } catch (error) {
+    console.error("Failed to load public/tenant-config.json. Booting with fallback config.", error);
+    return fallbackConfig;
+  }
 }

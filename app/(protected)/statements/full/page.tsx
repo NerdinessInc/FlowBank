@@ -21,6 +21,7 @@ import { Paginate } from "@/components/Paginate";
 import { StatementPDF } from "@/components/StatementPDF";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -71,8 +72,8 @@ export default function FullStatement() {
       }
 
       const userRec = {
-        accCode: userData.userRec.accCode || "",
-        puserName: userData.userRec.puserName || "",
+        accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+        puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
       };
 
       const accountPromises = userData.acctCollection.map(
@@ -253,11 +254,13 @@ export default function FullStatement() {
               render={({ field }) => (
                 <FormItem className="flex flex-col w-full">
                   <FormLabel>Start Date</FormLabel>
-                  <Input
-                    {...field}
-                    placeholder="Enter your start date"
-                    type="date"
-                  />
+                  <FormControl>
+                    <DatePicker 
+                      value={field.value} 
+                      onChange={field.onChange} 
+                      placeholder="Enter your start date" 
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -268,11 +271,13 @@ export default function FullStatement() {
               render={({ field }) => (
                 <FormItem className="flex flex-col w-full">
                   <FormLabel>End Date</FormLabel>
-                  <Input
-                    {...field}
-                    placeholder="Enter your end date"
-                    type="date"
-                  />
+                  <FormControl>
+                    <DatePicker 
+                      value={field.value} 
+                      onChange={field.onChange} 
+                      placeholder="Enter your end date" 
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

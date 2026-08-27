@@ -80,8 +80,8 @@ export default function ThirdPartyTransfers() {
       }
 
       const userRec = {
-        accCode: userData.userRec.accCode || "",
-        puserName: userData.userRec.puserName || "",
+        accCode: (userData.userRec as any).accCode || userData.userRec.pAcessCode || "",
+        puserName: (userData.userRec as any).puserName || userData.userRec.pUserName || "",
       };
 
       const accountPromises = userData.acctCollection.map(
@@ -232,14 +232,14 @@ export default function ThirdPartyTransfers() {
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
     if (sourceAccount && sourceAccount.length >= 10) {
-      const limit = userData?.pLimitsObject?.find(
+      const limit = (userData?.pLimitsObject as any)?.find(
         (limit: any) => limit.accountnumber === sourceAccount,
       )?.interBankLimit;
       setValue("dailyTransferLimit", Number(limit) || 0);
     }
   }, [watch("sourceAccount"), userData, setValue]);
 
-  const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry } = useQuery({
+  const { data: nameEnquiryData, isLoading: isLoadingNameEnquiry, isError: isNameEnquiryError } = useQuery({
     queryKey: [
       "name-enquiry",
       watch("bankCode"),
@@ -256,18 +256,20 @@ export default function ThirdPartyTransfers() {
       !!watch("bankCode") &&
       /^[0-9]+$/.test(watch("destinationAccountNumber")) &&
       watch("destinationAccountNumber").length >= 10,
-    onError: () => {
-      setNameEnquiryError("Invalid account number or bank. Please try again.");
-    },
   });
 
   useEffect(() => {
     if (nameEnquiryData?.success) {
       setNameEnquiryResult(nameEnquiryData);
       setNameEnquiryError(null);
-      setValue("destinationAccountName", nameEnquiryData.data?.accountName);
+      setValue(
+        "destinationAccountName",
+        nameEnquiryData?.data?.data?.accountName
+      );
+    } else if (isNameEnquiryError) {
+      setNameEnquiryError("Invalid account number or bank. Please try again.");
     }
-  }, [nameEnquiryData, setValue]);
+  }, [nameEnquiryData, isNameEnquiryError, setValue]);
 
   useEffect(() => {
     const sourceAccount = watch("sourceAccount");
@@ -443,7 +445,7 @@ export default function ThirdPartyTransfers() {
     try {
       const response = await validateOtp({
         token,
-        userName: userData?.userRec?.puserName || "",
+        userName: (userData?.userRec as any)?.puserName || userData?.userRec?.pUserName || "",
       });
 
       if (
@@ -734,7 +736,7 @@ export default function ThirdPartyTransfers() {
               {otp.map((digit, i) => (
                 <Input
                   key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
+                  ref={(el) => { otpRefs.current[i] = el; }}
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}

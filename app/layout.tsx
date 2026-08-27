@@ -1,48 +1,66 @@
-import type { Metadata } from 'next';
-import { headers } from 'next/headers';
-import { Outfit } from 'next/font/google';
-import { getTenantConfig } from '@/lib/tenants';
-import { TenantProvider } from '@/components/providers/TenantProvider';
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { Outfit, Poppins, Geist_Mono } from "next/font/google";
+import { getTenantConfig } from "@/lib/tenants";
+import { TenantProvider } from "@/components/providers/TenantProvider";
 
-import { Toaster } from '@/components/ui/toaster';
-import Providers from '@/app/providers';
-import './globals.css';
+import { Toaster } from "@/components/ui/toaster";
+import Providers from "@/app/providers";
+import "./globals.css";
 
 const outfit = Outfit({
-	subsets: ['latin'],
-	display: 'swap',
+  subsets: ["latin"],
+  display: "swap",
 });
+
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const fontMap: Record<string, string> = {
+  "outfit": outfit.className,
+  "poppins": poppins.className,
+  "geist-mono": geistMono.className,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
-  const tenantId = headersList.get('x-tenant-id') || 'default';
+  const tenantId = headersList.get("x-tenant-id") || "default";
   const config = await getTenantConfig(tenantId);
-  
+
   return {
     title: config.name,
     description: config.description || "Internet Banking Platform",
     icons: {
       icon: config.logo || "/favicon.ico", // Ideally you'd have a specific favicon field, falling back to logo or default
       apple: config.logo || "/favicon.ico",
-    }
+    },
   };
 }
 
 export default async function RootLayout({
-	children,
+  children,
 }: Readonly<{
-	children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-	const headersList = await headers();
-	const tenantId = headersList.get('x-tenant-id') || 'default';
-	const config = await getTenantConfig(tenantId);
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id") || "default";
+  const config = await getTenantConfig(tenantId);
 
-	return (
-		<html lang='en'>
-			<head>
-				<style dangerouslySetInnerHTML={{
-					__html: `
-						:root {
+  return (
+    <html lang="en">
+      <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+						html:root {
 							--primary: ${config.colors.primary};
 							--primary-foreground: ${config.colors.primaryForeground};
 							--accent: ${config.colors.accent};
@@ -57,7 +75,7 @@ export default async function RootLayout({
 							--ring: var(--primary);
 						}
 
-						.dark {
+						html.dark {
 							/* Dark Mode Tinted Palette */
 							--background: color-mix(in srgb, var(--primary) 8%, #0a0a0a);
 							--card: color-mix(in srgb, var(--primary) 12%, #0a0a0a);
@@ -66,18 +84,19 @@ export default async function RootLayout({
 							--input: color-mix(in srgb, var(--primary) 25%, #0a0a0a);
 							--ring: var(--primary);
 						}
-					`
-				}} />
-			</head>
-			<body className={`${outfit.className} antialiased`}>
-				<TenantProvider config={config}>
-					<Providers>
-						{children}
+					`,
+          }}
+        />
+      </head>
+      <body className={`${fontMap[config.font || "outfit"]} antialiased`}>
+        <TenantProvider config={config}>
+          <Providers>
+            {children}
 
-						<Toaster />
-					</Providers>
-				</TenantProvider>
-			</body>
-		</html>
-	);
+            <Toaster />
+          </Providers>
+        </TenantProvider>
+      </body>
+    </html>
+  );
 }

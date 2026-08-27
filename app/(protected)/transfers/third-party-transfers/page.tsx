@@ -41,8 +41,7 @@ import { appStore } from '@/store';
 import { formatCurrency } from '@/utils/formatNumber';
 
 // services
-import { returnGetBenefInfo } from '@/services/api';
-import { ReturnAcctDetails2 } from '@/services/apiAuth';
+import { ReturnAcctDetails2, returnGetBenefInfo } from '@/services/api';
 
 export default function InternalTransfers() {
 	const { userData } = appStore();
@@ -105,7 +104,7 @@ export default function InternalTransfers() {
 	// get daily transfer limit with source account
 	useEffect(() => {
     if (watch("sourceAccount")?.length >= 10) {
-      const limit = userData?.pLimitsObject?.find(
+      const limit = (userData?.pLimitsObject as any)?.find(
         (limit: any) => limit.accountnumber === watch("sourceAccount")
       )?.thirdPartyLimit;
 

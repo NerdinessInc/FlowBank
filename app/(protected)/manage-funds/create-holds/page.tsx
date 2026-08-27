@@ -8,6 +8,7 @@ import { z } from 'zod';
 // components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 
 import {
 	Form,
@@ -151,11 +152,13 @@ export default function CreateHolds() {
 						render={({ field }) => (
 							<FormItem className='flex flex-col w-full'>
 								<FormLabel>Hold Expiry Date</FormLabel>
-								<Input
-									{...field}
-									placeholder='Enter your hold expiry date'
-									type='date'
-								/>
+								<FormControl>
+									<DatePicker 
+										value={field.value} 
+										onChange={field.onChange} 
+										placeholder='Enter your hold expiry date' 
+									/>
+								</FormControl>
 
 								<FormMessage />
 							</FormItem>

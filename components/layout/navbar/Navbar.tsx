@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
-import { useTheme } from "@/app/(protected)/layout";
+import { useColorTheme } from "@/components/providers/ColorThemeProvider";
 import { usePathname } from "next/navigation";
 import { format } from "date-fns";
 import { useTenant } from "@/components/providers/TenantProvider";
 
 // icons
-import { UserCircle } from "lucide-react";
+import { UserCircle, Palette } from "lucide-react";
 
 // store
 import { appStore } from "@/store";
+
+// ui components
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { SidebarMobile } from "@/components/layout/sidebar/SidebarMobile";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -16,7 +26,7 @@ const Navbar = () => {
   const { userData } = appStore();
   const tenant = useTenant();
 
-  const { theme, changeTheme } = useTheme();
+  const { themeId, changeTheme, availableThemes } = useColorTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -27,16 +37,6 @@ const Navbar = () => {
     return () => clearInterval(timer); // Cleanup on unmount
   }, []);
 
-  const themeColors: { [key: string]: string } = {
-    light: "#ffffff", // White background for the light theme footer
-    dark: "#0a0a0a",
-    purple: "#e424e4", // Hex code for purple-700
-    blue: "#3b82f6", // Hex code for blue-700
-    red: "#ef4444", // Hex code for red-700
-    green: "#10b981", // Hex code for green-700
-  };
-
-  // Default to a color in case theme is not a valid key
   const isDefault = tenant.id === "default";
   
   const headerBgClass = isDefault 
@@ -47,7 +47,7 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="text-black w-full bg-primary/80 py-2 px-3 text-center text-sm font-medium">
+      <div className="text-white w-full bg-primary py-2 px-3 text-center text-sm font-medium">
         {format(currentTime, "dd MMM yyyy, hh:mm:ss a")}
       </div>
 
@@ -70,10 +70,41 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <p className={`${textColor} font-medium flex items-center gap-2`}>
-              <UserCircle className="h-5 w-5" />
-              {userData?.userRec?.pUserName}
-            </p>
+            {/* Theme Switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className={`${textColor} hover:bg-black/10 rounded-full`}>
+                  <Palette className="h-5 w-5" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {availableThemes.map((t) => (
+                  <DropdownMenuItem 
+                    key={t.id} 
+                    onClick={() => changeTheme(t.id)}
+                    className="flex items-center gap-3 cursor-pointer py-2"
+                  >
+                    <div 
+                      className="w-5 h-5 rounded-full border border-border shadow-sm" 
+                      style={{ backgroundColor: t.color }} 
+                    />
+                    <span className="font-medium">{t.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="hidden md:flex items-center gap-2">
+              <p className={`${textColor} font-medium flex items-center gap-2`}>
+                <UserCircle className="h-5 w-5" />
+                {userData?.userRec?.pUserName}
+              </p>
+            </div>
+
+            <div className="md:hidden">
+              <SidebarMobile />
+            </div>
           </div>
         </div>
       </header>

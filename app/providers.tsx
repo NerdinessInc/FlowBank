@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { ColorThemeProvider } from '@/components/providers/ColorThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const Providers = ({ children }: { children: any }) => {
@@ -8,7 +9,9 @@ const Providers = ({ children }: { children: any }) => {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider>{children}</ThemeProvider>
+			<ThemeProvider>
+				<ColorThemeProvider>{children}</ColorThemeProvider>
+			</ThemeProvider>
 		</QueryClientProvider>
 	);
 };

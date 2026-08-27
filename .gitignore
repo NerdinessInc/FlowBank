@@ -38,3 +38,5 @@ next-env.d.ts
 zresponse.json
 
 _test.txt
+# Local Netlify folder
+.netlify

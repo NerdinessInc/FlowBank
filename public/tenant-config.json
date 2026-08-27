@@ -1,0 +1,163 @@
+{
+  "id": "default",
+  "name": "FlowBank",
+  "logo": "/assets/logo.png",
+  "colors": {
+    "primary": "#0052cc",
+    "primaryForeground": "#ffffff",
+    "accent": "#06b6d4"
+  },
+  "description": "Secure Internet Banking Platform. Manage your wealth efficiently and securely.",
+  "contactPhone": "+1 (555) 000-0000",
+  "contactEmail": "support@flowbank.io",
+  "facebook": "https://facebook.com/flowbank",
+  "instagram": "https://instagram.com/flowbank",
+  "whatsapp": "+15550000000",
+  "api": {
+    "baseUrl": "https://api.flowbank.com",
+    "version": "v1"
+  },
+  "features": {
+    "dashboard": true,
+    "profile": true,
+    "accountInformation": true,
+    "myAccounts": true,
+    "accountSummary": true,
+    "timeDeposits": true,
+    "statements": true,
+    "statementCr": true,
+    "statementDr": true,
+    "statementFull": true,
+    "transfers": true,
+    "transferOtherBanks": true,
+    "transferInternal": true,
+    "transferHistory": true,
+    "billPayments": true,
+    "billAirtime": true,
+    "billData": true,
+    "customerRequests": true,
+    "reqChequeBook": true,
+    "reqStopPayment": true,
+    "reqMiscellaneous": true,
+    "standingInstructions": true,
+    "manageFunds": true,
+    "createHolds": true,
+    "loans": true
+  },
+  "font": "outfit",
+  "advert": {
+    "title": "InvestToday 3.0",
+    "description": "Visit our website to check out our investment plans and invest with us today!",
+    "buttonText": "Learn More",
+    "link": "https://invest.flowbank.com",
+    "images": [
+      "https://images.unsplash.com/photo-1719937050445-098888c0625e?q=80&w=1374&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1725714835081-118a2b0456b2?q=80&w=1470&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1726134212431-c794fd3d0c34?q=80&w=1335&auto=format&fit=crop"
+    ]
+  },
+  "backgroundImage": "/assets/bg-image.png",
+
+  "_inactive_configs_for_reference": {
+    "bank-a": {
+      "id": "bank-a",
+      "name": "Alpha Bank",
+      "logo": "/assets/logo2.png",
+      "colors": {
+        "primary": "#171717",
+        "primaryForeground": "#ffffff",
+        "accent": "#171717"
+      },
+      "description": "Empowering your financial future with modern, secure, and reliable banking solutions tailored for you.",
+      "contactPhone": "+1 (800) 123-4567",
+      "contactEmail": "support@alphabank.com",
+      "facebook": "https://facebook.com/alphabank",
+      "instagram": "https://instagram.com/alphabank",
+      "whatsapp": "+18001234567",
+      "backgroundImage": "/assets/alpha-bg.jpg",
+      "font": "poppins",
+      "features": {
+        "dashboard": true,
+        "profile": true,
+        "accountInformation": true,
+        "myAccounts": true,
+        "accountSummary": true,
+        "timeDeposits": false,
+        "statements": true,
+        "statementCr": true,
+        "statementDr": true,
+        "statementFull": false,
+        "transfers": true,
+        "transferOtherBanks": true,
+        "transferInternal": true,
+        "transferHistory": true,
+        "billPayments": true,
+        "billAirtime": true,
+        "billData": false,
+        "customerRequests": true,
+        "reqChequeBook": true,
+        "reqStopPayment": true,
+        "reqMiscellaneous": false,
+        "standingInstructions": true,
+        "manageFunds": false,
+        "createHolds": false,
+        "loans": false
+      },
+      "advert": {
+        "title": "Alpha Premium Perks",
+        "description": "Upgrade to Alpha Premier and unlock exclusive cashback and travel perks.",
+        "buttonText": "Upgrade Now",
+        "link": "https://rewards.alphabank.com",
+        "images": [
+          "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1374&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=1470&auto=format&fit=crop"
+        ]
+      }
+    },
+    "bank-b": {
+      "id": "bank-b",
+      "name": "Beta Finance",
+      "logo": "/assets/logo3.png",
+      "colors": {
+        "primary": "#16a34a",
+        "primaryForeground": "#ffffff",
+        "accent": "#84cc16"
+      },
+      "description": "Sustainable banking for a greener tomorrow. Experience next-generation finance with Beta.",
+      "contactPhone": "+1 (888) 987-6543",
+      "contactEmail": "hello@betafinance.org",
+      "facebook": "https://facebook.com/betafinance",
+      "instagram": "https://instagram.com/betafinance",
+      "whatsapp": "+18889876543",
+      "backgroundImage": "/assets/beta-bg.jpg",
+      "font": "poppins",
+      "features": {
+        "dashboard": true,
+        "profile": true,
+        "accountInformation": true,
+        "myAccounts": true,
+        "accountSummary": true,
+        "timeDeposits": true,
+        "statements": true,
+        "statementCr": false,
+        "statementDr": false,
+        "statementFull": true,
+        "transfers": true,
+        "transferOtherBanks": true,
+        "transferInternal": true,
+        "transferHistory": true,
+        "billPayments": false,
+        "billAirtime": false,
+        "billData": false,
+        "customerRequests": false,
+        "reqChequeBook": false,
+        "reqStopPayment": false,
+        "reqMiscellaneous": false,
+        "standingInstructions": false,
+        "manageFunds": true,
+        "createHolds": true,
+        "loans": true
+      }
+    }
+  }
+}

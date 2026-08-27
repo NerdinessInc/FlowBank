@@ -75,7 +75,7 @@ const TransferHistory = () => {
   const queries = useQueries({
     queries: accountNumbers.map((accountNumber: string) => ({
       queryKey: ["transfer-history", accountNumber],
-      queryFn: () => getTransferHistory(accountNumber),
+      queryFn: () => getTransferHistory(accountNumber as any),
       enabled: !!accountNumber,
       staleTime: 5 * 60 * 1000,
     })),
@@ -89,16 +89,18 @@ const TransferHistory = () => {
     const combined: TransferItem[] = [];
 
     queries.forEach((query, index) => {
-      if (query.isSuccess && query.data?.data) {
+      if (query.isSuccess && (query.data as any)?.data) {
         const accountNumber = accountNumbers[index];
-        const transfers = query.data.data;
+        const transfers = (query.data as any).data;
 
-        const enriched = transfers.map((t: any) => ({
-          ...t,
-          sourceAccountNumber: accountNumber,
-        }));
+        if (Array.isArray(transfers)) {
+          const enriched = transfers.map((t: any) => ({
+            ...t,
+            sourceAccountNumber: accountNumber,
+          }));
 
-        combined.push(...enriched);
+          combined.push(...enriched);
+        }
       }
     });
 

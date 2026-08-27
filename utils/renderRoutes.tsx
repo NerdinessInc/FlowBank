@@ -12,6 +12,7 @@ import {
 import { Route } from './routes';
 
 import { cn } from '@/lib/utils';
+import { FeatureGuard } from '@/components/guards/FeatureGuard';
 
 export const renderRoutes = ({
 	routes,
@@ -40,8 +41,10 @@ export const renderRoutes = ({
 		const isActive =
 			pathname === route.pathname || pathname.startsWith(route.pathname + '/');
 
+		let element;
+
 		if (route.children) {
-			return (
+			element = (
 				<Collapsible
 					key={route.pathname}
 					open={isOpen}
@@ -82,27 +85,37 @@ export const renderRoutes = ({
 					</CollapsibleContent>
 				</Collapsible>
 			);
+		} else {
+			element = (
+				<Button
+					key={route.pathname}
+					variant='ghost'
+					className={cn(
+						'w-full justify-start',
+						!isActive && 'hover:!bg-black/5 dark:hover:!bg-white/10 hover:!text-foreground',
+						isActive && 'bg-gradient-to-r from-primary to-accent text-white hover:text-white hover:opacity-90',
+						level > 0 && 'pl-8'
+					)}
+					asChild
+				>
+					<Link href={route.pathname}>
+						<span className='flex items-center gap-2'>
+							{route.icon}
+							{route.label}
+						</span>
+					</Link>
+				</Button>
+			);
 		}
 
-		return (
-			<Button
-				key={route.pathname}
-				variant='ghost'
-				className={cn(
-					'w-full justify-start',
-					!isActive && 'hover:!bg-black/5 dark:hover:!bg-white/10 hover:!text-foreground',
-					isActive && 'bg-gradient-to-r from-primary to-accent text-white hover:text-white hover:opacity-90',
-					level > 0 && 'pl-8'
-				)}
-				asChild
-			>
-				<Link href={route.pathname}>
-					<span className='flex items-center gap-2'>
-						{route.icon}
-						{route.label}
-					</span>
-				</Link>
-			</Button>
-		);
+		if (route.featureKey) {
+			return (
+				<FeatureGuard key={route.pathname} featureKey={route.featureKey}>
+					{element}
+				</FeatureGuard>
+			);
+		}
+
+		return element;
 	});
 };
